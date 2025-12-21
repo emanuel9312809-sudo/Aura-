@@ -518,7 +518,6 @@ button.primary.expense-mode {
   text-anchor: middle;
 }
 
-/* Tipos de Texto para Radar */
 .radar-val-text {
   fill: white;
   font-size: 12px;
@@ -554,6 +553,38 @@ button.primary.expense-mode {
   font-weight: bold;
   color: white;
   background: #2a2a2a;
+}
+
+/* Personal Account Cards v1.7.0 */
+.personal-accounts-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 5px 0;
+  margin-bottom: 15px;
+}
+
+.personal-account-card {
+  min-width: 120px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.pac-name {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.pac-balance {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: white;
 }
 
 .personal-progress-bar {

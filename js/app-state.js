@@ -91,9 +91,10 @@ class AuraState {
                         config: { ...this.state.finance.config, ...(parsed.finance?.config || {}) },
                         buckets: { ...this.state.finance.buckets, ...(parsed.finance?.buckets || {}) },
                         labels: { ...this.state.finance.labels, ...(parsed.finance?.labels || {}) },
-                        transactions: parsed.finance?.transactions || [],
-                        accounts: parsed.finance?.accounts || this.defaultState.finance.accounts, // v1.5.0
-                        templates: parsed.finance?.templates || [] // v1.5.0
+                        transactions: Array.isArray(parsed.finance?.transactions) ? parsed.finance.transactions : [],
+                        // Fix v1.7.0: Explicit check for Array to prevent overwriting with defaults
+                        accounts: Array.isArray(parsed.finance?.accounts) ? parsed.finance.accounts : this.defaultState.finance.accounts,
+                        templates: Array.isArray(parsed.finance?.templates) ? parsed.finance.templates : []
                     },
                     routine: { ...this.state.routine, ...(parsed.routine || {}) },
                     study: {

@@ -190,6 +190,14 @@ class UIRenderer {
 
                 <!-- VIEW: PERSONAL -->
                 <div id="view-personal" style="display:none;">
+                     <!-- v1.7.0 Minhas Contas -->
+                     <div class="glass-card">
+                        <h3>Minhas Contas</h3>
+                        <div class="personal-accounts-scroll" id="personal-accounts-container">
+                            <!-- Filled by JS -->
+                        </div>
+                     </div>
+
                      <div class="glass-card" style="text-align:center;">
                         <h3>Meu Património</h3>
                         <div style="font-size: 2.5rem; font-weight: bold; color: var(--finance-color);" id="personal-balance-display">0.00 €</div>
@@ -478,6 +486,17 @@ class UIRenderer {
         if (document.getElementById('personal-balance-display')) {
             const persBal = buckets.profit + buckets.investment + state.bonusVault.current;
             document.getElementById('personal-balance-display').textContent = `${persBal.toFixed(2)} €`;
+
+            // v1.7.0 Minhas Contas List
+            const pacContainer = document.getElementById('personal-accounts-container');
+            if (pacContainer) {
+                pacContainer.innerHTML = accounts.map(a => `
+                    <div class="personal-account-card">
+                        <div class="pac-name">${a.name}</div>
+                        <div class="pac-balance">${a.balance.toFixed(2)}€</div>
+                    </div>
+                `).join('');
+            }
 
             document.getElementById('vault-current').textContent = `${state.bonusVault.current.toFixed(0)} €`;
             const current = state.bonusVault.current;
