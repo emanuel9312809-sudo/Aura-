@@ -1,0 +1,21 @@
+{
+  "name": "AURA: Life Management System",
+  "short_name": "AURA",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#121212",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192x192/121212/00d4ff?text=AURA",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://via.placeholder.com/512x512/121212/00d4ff?text=AURA",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

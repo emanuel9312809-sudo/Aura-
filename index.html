@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#121212">
+    <meta name="description" content="AURA: Seu sistema de gestão de vida pessoal.">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>AURA: Life Management</title>
+    
+    <link rel="manifest" href="./manifest.json">
+    <link rel="stylesheet" href="./css/styles.css?v=1.0.0">
+</head>
+<body>
+    <div id="app">
+        <!-- A interface será injetada aqui pelo ui-render.js -->
+    </div>
+    
+    <button id="update-btn">Nova versão disponível</button>
+
+    <!-- Scripts Modulares -->
+    <script type="module">
+        import { uiRenderer } from './js/ui-render.js?v=1.0.0';
+        
+        // Registo do Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(registration => {
+                        console.log('SW registado: ', registration.scope);
+                        
+                        // Detetar nova versão (aguardando ativação)
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // Nova versão disponível encontrada
+                                    uiRenderer.showUpdateNotification();
+                                }
+                            });
+                        });
+                    })
+                    .catch(error => {
+                        console.log('Falha no registo do SW: ', error);
+                    });
+            });
+
+            let refreshing;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (refreshing) return;
+                window.location.reload();
+                refreshing = true;
+            });
+        }
+    </script>
+</body>
+</html>
