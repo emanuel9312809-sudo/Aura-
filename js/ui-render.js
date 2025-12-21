@@ -421,17 +421,18 @@ class UIRenderer {
             if (t) auraState.startStudyTimer(t);
         });
 
-        // v1.7.6_StructureFix Quick Add
-        const btnQuickAcc = document.getElementById('btn-quick-add-acc');
-        if (btnQuickAcc) {
-            btnQuickAcc.addEventListener('click', () => {
+        // v1.7.7_HotfixButton: Robust Event Delegation
+        // We attach to appElement (or document) to catch clicks even if the button was re-rendered.
+        this.appElement.addEventListener('click', (e) => {
+            // Check for Add Account Button (delegation)
+            if (e.target.id === 'btn-quick-add-acc') {
                 const name = prompt("Nome da conta:");
                 if (name) {
                     const bal = parseFloat(prompt("Saldo inicial:") || "0");
                     auraState.addAccount(name, bal);
                 }
-            });
-        }
+            }
+        });
     }
 
     switchTab(tabName) {
