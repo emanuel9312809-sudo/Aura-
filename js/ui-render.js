@@ -18,9 +18,14 @@ class UIRenderer {
         this.renderStructure();
         this.setupListeners();
 
+        console.log('UI: Init completed. Subscribing to state...');
         auraState.subscribe((state) => {
-            this.updateUI(state);
-            this.handleTimerState(state);
+            console.log('UI: State update received. Scheduling updateUI...');
+            // v1.7.9_ForceRender: Ensure DOM is ready (microtask)
+            setTimeout(() => {
+                this.updateUI(state);
+                this.handleTimerState(state);
+            }, 0);
         });
     }
 

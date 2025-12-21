@@ -122,10 +122,12 @@ class AuraState {
 
     subscribe(listener) {
         this.listeners.push(listener);
+        console.log('Core: New subscriber registered. Sending immediate state.');
         listener(this.state);
     }
 
     notify() {
+        console.log(`Core: Notifying ${this.listeners.length} listeners.`);
         this.listeners.forEach(listener => listener(this.state));
     }
 

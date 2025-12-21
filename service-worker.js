@@ -1,11 +1,11 @@
-const CACHE_NAME = 'aura-v1.7.8_UIFix-cache';
+const CACHE_NAME = 'aura-v1.7.9_ForceRender-cache';
 const FILES_TO_CACHE = [
     './',
     './index.html',
     './manifest.json',
-    './css/styles.css?v=1.7.8_UIFix',
-    './js/app-state.js',
-    './js/ui-render.js?v=1.7.8_UIFix'
+    './css/styles.css?v=1.7.9_ForceRender',
+    './js/app-state.js?v=1.7.9_ForceRender',
+    './js/ui-render.js?v=1.7.9_ForceRender'
 ];
 
 self.addEventListener('install', (event) => {
