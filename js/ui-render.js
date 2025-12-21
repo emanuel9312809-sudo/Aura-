@@ -16,7 +16,7 @@ class UIRenderer {
 
     init() {
         this.renderStructure();
-        this.setupListeners();
+        // this.setupListeners(); // REMOVED: Undefined method causing crash. setupInternalListeners is called in renderStructure.
 
         console.log('UI: Init completed. Subscribing to state...');
         auraState.subscribe((state) => {

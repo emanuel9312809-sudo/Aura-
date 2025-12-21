@@ -1,11 +1,11 @@
-const CACHE_NAME = 'aura-v1.7.9_ForceRender-cache';
+const CACHE_NAME = 'aura-v1.7.9_HotfixInit-cache';
 const FILES_TO_CACHE = [
     './',
     './index.html',
     './manifest.json',
-    './css/styles.css?v=1.7.9_ForceRender',
+    './css/styles.css?v=1.7.9_HotfixInit',
     './js/app-state.js?v=1.7.9_ForceRender',
-    './js/ui-render.js?v=1.7.9_ForceRender'
+    './js/ui-render.js?v=1.7.9_HotfixInit'
 ];
 
 self.addEventListener('install', (event) => {
