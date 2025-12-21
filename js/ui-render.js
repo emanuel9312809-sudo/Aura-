@@ -488,15 +488,21 @@ class UIRenderer {
             const persBal = buckets.profit + buckets.investment + state.bonusVault.current;
             document.getElementById('personal-balance-display').textContent = `${persBal.toFixed(2)} €`;
 
-            // v1.7.0 Minhas Contas List
+            // v1.7.2 Fix: Minhas Contas List & Fallback
             const pacContainer = document.getElementById('personal-accounts-container');
             if (pacContainer) {
-                pacContainer.innerHTML = accounts.map(a => `
-                    <div class="personal-account-card">
-                        <div class="pac-name">${a.name}</div>
-                        <div class="pac-balance">${a.balance.toFixed(2)}€</div>
-                    </div>
-                `).join('');
+                if (accounts && accounts.length > 0) {
+                    pacContainer.innerHTML = accounts.map(a => `
+                        <div class="personal-account-card">
+                            <div class="pac-name">${a.name}</div>
+                            <div class="pac-balance">${parseFloat(a.balance).toFixed(2)}€</div>
+                        </div>
+                    `).join('');
+                } else {
+                    pacContainer.innerHTML = '<div style="color:var(--text-muted); font-size:0.8rem; padding:10px;">Sem contas criadas.</div>';
+                }
+            } else {
+                console.error('UI: CRITICAL - Container #personal-accounts-container NOT FOUND in DOM.');
             }
 
             document.getElementById('vault-current').textContent = `${state.bonusVault.current.toFixed(0)} €`;

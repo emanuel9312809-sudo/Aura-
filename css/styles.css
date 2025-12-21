@@ -562,6 +562,9 @@ button.primary.expense-mode {
   overflow-x: auto;
   padding: 5px 0;
   margin-bottom: 15px;
+  min-height: 80px;
+  /* v1.7.2 Ensure visibility */
+  align-items: center;
 }
 
 .personal-account-card {
@@ -573,6 +576,8 @@ button.primary.expense-mode {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  flex-shrink: 0;
+  /* v1.7.2 Prevent shrinking */
 }
 
 .pac-name {
