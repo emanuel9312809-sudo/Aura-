@@ -1,11 +1,11 @@
-const CACHE_NAME = 'aura-v1.8.0.1_SyntaxFix-cache';
+const CACHE_NAME = 'aura-v1.8.1_StructureRefactor-cache';
 const FILES_TO_CACHE = [
     './',
     './index.html',
     './manifest.json',
     './css/styles.css?v=1.8.0',
     './js/app-state.js?v=1.8.0',
-    './js/ui-render.js?v=1.8.0.1_SyntaxFix'
+    './js/ui-render.js?v=1.8.1_StructureRefactor'
 ];
 
 self.addEventListener('install', (event) => {

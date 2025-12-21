@@ -220,6 +220,28 @@ class UIRenderer {
                         <h3>ROI Clocks (Fontes)</h3>
                         <div class="roi-clocks-scroll" id="roi-clocks-container"></div>
                     </div>
+
+                     <div class="glass-card">
+                        <h2>Registo</h2>
+                        <div class="toggle-container">
+                            <button class="toggle-btn active income" id="btn-mode-income">Venda</button>
+                            <button class="toggle-btn expense" id="btn-mode-expense">Despesa</button>
+                        </div>
+                        <div id="quick-templates-container" style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; margin-bottom: 8px;"></div>
+                        <input type="number" id="input-transaction-amount" placeholder="Valor (€)" step="0.01">
+                        <label id="lbl-acc-select" style="font-size: 0.8rem; color: var(--text-muted);">Destino</label>
+                        <select id="select-account-transaction"></select>
+                        <div id="expense-category-container" style="display: none; margin-top: 10px;">
+                            <label style="font-size: 0.8rem; color: var(--text-muted);">Categoria</label>
+                            <select id="select-expense-bucket"></select>
+                        </div>
+                        <button class="primary" id="btn-submit-transaction" style="margin-top: 15px;">Registar</button>
+                     </div>
+                     
+                     <div class="glass-card">
+                        <h2>Últimos Movimentos</h2>
+                        <div id="transactions-list"></div>
+                    </div>
                 </div>
 
                 <!-- VIEW: PERSONAL -->
@@ -251,27 +273,7 @@ class UIRenderer {
                     </div>
                 </div>
 
-                 <div class="glass-card">
-                    <h2>Registo</h2>
-                    <div class="toggle-container">
-                        <button class="toggle-btn active income" id="btn-mode-income">Venda</button>
-                        <button class="toggle-btn expense" id="btn-mode-expense">Despesa</button>
-                    </div>
-                    <div id="quick-templates-container" style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; margin-bottom: 8px;"></div>
-                    <input type="number" id="input-transaction-amount" placeholder="Valor (€)" step="0.01">
-                    <label id="lbl-acc-select" style="font-size: 0.8rem; color: var(--text-muted);">Destino</label>
-                    <select id="select-account-transaction"></select>
-                    <div id="expense-category-container" style="display: none; margin-top: 10px;">
-                        <label style="font-size: 0.8rem; color: var(--text-muted);">Categoria</label>
-                        <select id="select-expense-bucket"></select>
-                    </div>
-                    <button class="primary" id="btn-submit-transaction" style="margin-top: 15px;">Registar</button>
-                 </div>
-                 
-                 <div class="glass-card">
-                    <h2>Últimos Movimentos</h2>
-                    <div id="transactions-list"></div>
-                </div>
+
             </div>
 
             <!-- Tab SAÚDE/MENTE (kept standard) -->
