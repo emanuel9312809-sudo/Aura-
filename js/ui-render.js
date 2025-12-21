@@ -19,8 +19,11 @@ class UIRenderer {
         this.setupListeners();
 
         auraState.subscribe((state) => {
-            this.updateUI(state);
-            this.handleTimerState(state);
+            // v1.7.4 Force async render
+            setTimeout(() => {
+                this.updateUI(state);
+                this.handleTimerState(state);
+            }, 50);
         });
     }
 
@@ -488,10 +491,16 @@ class UIRenderer {
             const persBal = buckets.profit + buckets.investment + state.bonusVault.current;
             document.getElementById('personal-balance-display').textContent = `${persBal.toFixed(2)} €`;
 
-            // v1.7.2 Fix: Minhas Contas List & Fallback
+            // v1.7.4 DEBUG: Minhas Contas List & Fallback
             const pacContainer = document.getElementById('personal-accounts-container');
             if (pacContainer) {
+                // DEBUG AREA
+                const debugDump = document.createElement('div');
+                debugDump.style.cssText = "font-size:10px; color:yellow; background:black; padding:5px; margin-top:5px; word-break:break-all;";
+                debugDump.textContent = "DEBUG v1.7.4: " + JSON.stringify(accounts);
+
                 if (accounts && accounts.length > 0) {
+                    pacContainer.style.border = "1px solid green"; // DEBUG OK
                     pacContainer.innerHTML = accounts.map(a => `
                         <div class="personal-account-card">
                             <div class="pac-name">${a.name}</div>
@@ -499,8 +508,11 @@ class UIRenderer {
                         </div>
                     `).join('');
                 } else {
+                    pacContainer.style.border = "2px solid red"; // DEBUG EMPTY
                     pacContainer.innerHTML = '<div style="color:var(--text-muted); font-size:0.8rem; padding:10px;">Sem contas criadas.</div>';
                 }
+                // Append Debug info
+                pacContainer.parentNode.appendChild(debugDump);
             } else {
                 console.error('UI: CRITICAL - Container #personal-accounts-container NOT FOUND in DOM.');
             }
