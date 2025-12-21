@@ -25,7 +25,8 @@ class AuraState {
                     tax: 0,
                     investment: 0
                 },
-                profitThisLevel: 0
+                profitThisLevel: 0,
+                transactions: [] // v1.3.0 History
             },
             health: {
                 water: 0,
@@ -75,7 +76,8 @@ class AuraState {
                         ...this.state.finance,
                         ...parsed.finance,
                         config: { ...this.state.finance.config, ...(parsed.finance?.config || {}) },
-                        buckets: { ...this.state.finance.buckets, ...(parsed.finance?.buckets || {}) }
+                        buckets: { ...this.state.finance.buckets, ...(parsed.finance?.buckets || {}) },
+                        transactions: parsed.finance?.transactions || [] // Ensure array
                     },
                     routine: { ...this.state.routine, ...(parsed.routine || {}) },
                     study: {
@@ -190,24 +192,75 @@ class AuraState {
         this.saveState();
     }
 
-    // --- Core Logic (Finance & XP) ---
+    // --- Core Logic (Finance & XP) v1.3.0 ---
 
     processIncome(amount) {
         amount = parseFloat(amount);
         if (isNaN(amount) || amount <= 0) return;
 
         const { config, buckets } = this.state.finance;
-        buckets.operation += amount * (config.operation / 100);
-        buckets.profit += amount * (config.profit / 100);
-        buckets.tax += amount * (config.tax / 100);
-        buckets.investment += amount * (config.investment / 100);
 
-        this.state.finance.profitThisLevel += amount * (config.profit / 100);
+        // Calculate splits
+        const opOps = amount * (config.operation / 100);
+        const opProfit = amount * (config.profit / 100);
+        const opTax = amount * (config.tax / 100);
+        const opInvest = amount * (config.investment / 100);
 
-        // Auto-check Finance Review se registar renda? (Opcional, por agora manual)
-        // this.state.routine.checklist.financial_review = true;
+        // Apply to buckets
+        buckets.operation += opOps;
+        buckets.profit += opProfit;
+        buckets.tax += opTax;
+        buckets.investment += opInvest;
+
+        this.state.finance.profitThisLevel += opProfit;
+
+        // Record Transaction (v1.3.0)
+        if (!this.state.finance.transactions) this.state.finance.transactions = [];
+        this.state.finance.transactions.unshift({
+            id: Date.now(),
+            date: new Date().toISOString(),
+            amount: amount,
+            split: {
+                operation: opOps,
+                profit: opProfit,
+                tax: opTax,
+                investment: opInvest
+            },
+            configSnapshot: { ...config }
+        });
+
+        // Limit history size (optional, e.g., 50 last)
+        if (this.state.finance.transactions.length > 50) this.state.finance.transactions.pop();
 
         this.addXP(10);
+        this.saveState();
+    }
+
+    deleteTransaction(id) {
+        const { finance } = this.state;
+        const index = finance.transactions.findIndex(t => t.id === id);
+
+        if (index === -1) return; // Not found
+
+        const t = finance.transactions[index];
+
+        // Revert Buckets
+        finance.buckets.operation -= t.split.operation;
+        finance.buckets.profit -= t.split.profit;
+        finance.buckets.tax -= t.split.tax;
+        finance.buckets.investment -= t.split.investment;
+
+        // Revert Profit Level Tracker
+        finance.profitThisLevel -= t.split.profit;
+        if (finance.profitThisLevel < 0) finance.profitThisLevel = 0; // Safety floor
+
+        // Revert XP (Simple reversion of 10 XP)
+        this.addXP(-10);
+
+        // Remove from history
+        finance.transactions.splice(index, 1);
+
+        console.log(`Transação ${id} apagada. Valores revertidos.`);
         this.saveState();
     }
 
@@ -218,6 +271,9 @@ class AuraState {
 
     addXP(amount) {
         this.state.profile.currentXP += amount;
+        // Prevent negative XP (edge case on delete)
+        if (this.state.profile.currentXP < 0) this.state.profile.currentXP = 0;
+
         this.checkLevelUp();
         this.saveState();
     }

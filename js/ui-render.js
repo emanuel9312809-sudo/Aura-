@@ -1,6 +1,6 @@
 /**
- * AURA - UI Render Engine v1.2.0
- * Interface completa em Português com Navegação, Finanças, Saúde e Mente (Estudo).
+ * AURA - UI Render Engine v1.3.0
+ * Interface completa com Histórico Financeiro, Glassmorphism e Undo Logic.
  */
 import { auraState } from './app-state.js';
 
@@ -8,8 +8,8 @@ class UIRenderer {
     constructor() {
         this.appElement = document.getElementById('app');
         this.updateBtn = document.getElementById('update-btn');
-        this.activeTab = 'aura'; // aura, finance, health, mind
-        this.timerInterval = null; // Referência para o setInterval do timer
+        this.activeTab = 'aura';
+        this.timerInterval = null;
         this.init();
     }
 
@@ -17,7 +17,6 @@ class UIRenderer {
         this.renderStructure();
         this.setupListeners();
 
-        // Subscrever ao estado global
         auraState.subscribe((state) => {
             this.updateUI(state);
             this.handleTimerState(state);
@@ -26,17 +25,16 @@ class UIRenderer {
 
     renderStructure() {
         this.appElement.innerHTML = `
-            <!-- Tab AURA -->
+            <!-- Tab ROTINA (Ex-Aura) -->
             <div id="tab-aura" class="tab-content active">
                 <div id="aura-orb-container"></div>
-                <div class="card">
+                <div class="glass-card">
                     <div class="stat-row"><span>Nível</span><span id="display-level">1</span></div>
                     <div class="stat-row"><span>XP</span><span id="display-xp">0 / 1000</span></div>
                     <div class="stat-row"><span>Bonus Vault</span><span id="display-vault" style="color: var(--accent-color)">0.00 €</span></div>
                 </div>
 
-                <!-- Checklist Diária (Resumo) -->
-                <div class="card" style="margin-top: 20px;">
+                <div class="glass-card">
                     <h2>Rotina Diária</h2>
                     <div class="checklist-item">
                         <input type="checkbox" id="check-finance-main" data-key="financial_review">
@@ -53,21 +51,31 @@ class UIRenderer {
                 </div>
             </div>
 
-            <!-- Tab FINANÇA (Antiga 'Finanças') -->
+            <!-- Tab FINANÇA -->
             <div id="tab-finance" class="tab-content">
-                <div class="card">
+                <div class="glass-card">
                     <h2>Registo de Venda</h2>
                     <input type="number" id="input-income" placeholder="Valor (€)" step="0.01">
                     <button class="primary" id="btn-add-income">Registar Venda</button>
                 </div>
-                <div class="card" style="margin-top: 20px;">
+
+                <div class="glass-card">
                     <h2>Baldes de Rendimento</h2>
-                    <div class="stat-row"><span>Operação (<span id="perc-op">60</span>%)</span><span id="val-op">0.00 €</span></div>
-                    <div class="stat-row"><span>Lucro (<span id="perc-profit">20</span>%)</span><span id="val-profit">0.00 €</span></div>
-                    <div class="stat-row"><span>Impostos (<span id="perc-tax">15</span>%)</span><span id="val-tax">0.00 €</span></div>
-                    <div class="stat-row"><span>Investimento (<span id="perc-invest">5</span>%)</span><span id="val-invest">0.00 €</span></div>
+                    <div class="stat-row"><span>Operação (<span id="perc-op">60</span>%)</span><span id="val-op" class="text-success">0.00 €</span></div>
+                    <div class="stat-row"><span>Lucro (<span id="perc-profit">20</span>%)</span><span id="val-profit" class="text-success">0.00 €</span></div>
+                    <div class="stat-row"><span>Impostos (<span id="perc-tax">15</span>%)</span><span id="val-tax" class="text-success">0.00 €</span></div>
+                    <div class="stat-row"><span>Investimento (<span id="perc-invest">5</span>%)</span><span id="val-invest" class="text-success">0.00 €</span></div>
                 </div>
-                 <div class="card" style="margin-top: 20px;">
+
+                <div class="glass-card">
+                    <h2>Últimos Movimentos</h2>
+                    <div id="transactions-list">
+                        <!-- Injetado via JS -->
+                        <div style="text-align: center; opacity: 0.5; font-size: 0.8rem; padding: 10px;">Sem movimentos recentes</div>
+                    </div>
+                </div>
+
+                 <div class="glass-card">
                     <h2>Configurações (%)</h2>
                     <label>Op: <span id="lbl-op">60</span>%</label>
                     <input type="range" id="slider-op" min="0" max="100" value="60">
@@ -83,39 +91,33 @@ class UIRenderer {
 
             <!-- Tab SAÚDE -->
             <div id="tab-health" class="tab-content">
-                <div class="card" style="text-align: center;">
+                <div class="glass-card" style="text-align: center;">
                     <h2>Vitalidade</h2>
                     <button class="water-btn" id="btn-water">
                         +250ml<br>
                         <span id="display-water" style="font-size: 0.8rem; opacity: 0.8">0ml</span>
                     </button>
                 </div>
-                <!-- Checklist item sync -->
-                <div class="card" style="margin-top: 20px; display: flex; align-items: center; justify-content: space-between;">
+                <div class="glass-card" style="display: flex; align-items: center; justify-content: space-between;">
                     <span>Treino do Dia</span>
                     <input type="checkbox" id="check-workout-health" data-key="workout" style="transform: scale(1.5);">
                 </div>
             </div>
 
-            <!-- Tab MENTE (Nova) -->
+            <!-- Tab MENTE -->
             <div id="tab-mind" class="tab-content">
-                <div class="card" style="text-align: center;">
+                <div class="glass-card" style="text-align: center;">
                     <h2>Estudo Técnico (20min)</h2>
-                    
-                    <!-- Timer UI -->
                     <div id="timer-display" style="font-size: 3rem; font-family: monospace; font-weight: bold; margin: 20px 0; color: var(--accent-color);">
                         20:00
                     </div>
-
                     <div id="timer-controls">
                         <input type="text" id="input-study-topic" placeholder="O que vais estudar hoje?" 
-                            style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #333; background: #222; color: white; margin-bottom: 10px;">
-                        
+                            style="width: 100%; border-radius: 8px; margin-bottom: 10px;">
                         <button class="primary" id="btn-start-timer">Começar Sessão</button>
                     </div>
                 </div>
-                
-                 <div class="card" style="margin-top: 20px; display: flex; align-items: center; justify-content: space-between;">
+                 <div class="glass-card" style="display: flex; align-items: center; justify-content: space-between;">
                     <span>Estudo Realizado</span>
                     <input type="checkbox" id="check-study-mind" data-key="technical_study" style="transform: scale(1.5);">
                 </div>
@@ -161,7 +163,6 @@ class UIRenderer {
     }
 
     setupInternalListeners() {
-        // Nav
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 const target = e.currentTarget.getAttribute('data-tab');
@@ -169,45 +170,48 @@ class UIRenderer {
             });
         });
 
-        // Finance
         document.getElementById('btn-add-income').addEventListener('click', () => {
             const val = document.getElementById('input-income').value;
             if (val) {
                 auraState.processIncome(val);
                 document.getElementById('input-income').value = '';
-                alert(`Venda de ${val}€ registada!`);
             }
         });
 
-        // Checklists Global (usa delegação ou bind manual)
-        // Precisamos tratar TODOS os checkboxes que têm data-key
+        // Event Delegation para Botão Delete (Listado dinamicamente)
+        document.getElementById('transactions-list').addEventListener('click', (e) => {
+            // Check se clicou no botão ou ícone (usar closest)
+            const btn = e.target.closest('.btn-delete');
+            if (btn) {
+                const id = parseInt(btn.getAttribute('data-id'));
+                if (confirm('Tens a certeza que queres reverter esta transação?')) {
+                    auraState.deleteTransaction(id);
+                }
+            }
+        });
+
         const checklistCheckboxes = document.querySelectorAll('input[type="checkbox"][data-key]');
         checklistCheckboxes.forEach(box => {
-            // Remover listeners antigos para evitar duplicados? Aqui recrio tudo, então ok.
-            // Mas melhor usar 'change' event
             box.addEventListener('change', (e) => {
                 const key = e.target.getAttribute('data-key');
                 auraState.toggleChecklistItem(key);
             });
         });
 
-        // Sliders (simplificado para brevidade)
         const sliders = ['slider-op', 'slider-profit', 'slider-tax', 'slider-invest'];
         sliders.forEach(id => {
             document.getElementById(id).addEventListener('input', () => this.handleConfigChange());
         });
 
-        // Health
         document.getElementById('btn-water').addEventListener('click', () => auraState.addWater());
 
-        // Timer Start
         document.getElementById('btn-start-timer').addEventListener('click', () => {
             const topic = document.getElementById('input-study-topic').value;
             if (!topic) {
                 alert('Escreve o que vais estudar!');
                 return;
             }
-            auraState.startStudyTimer(topic, 20); // 20 minutos
+            auraState.startStudyTimer(topic, 20);
         });
     }
 
@@ -244,7 +248,6 @@ class UIRenderer {
         }
     }
 
-    // --- Timer Logic no UI ---
     handleTimerState(state) {
         if (this.timerInterval) clearInterval(this.timerInterval);
 
@@ -253,16 +256,9 @@ class UIRenderer {
         const input = document.getElementById('input-study-topic');
 
         if (state.study.isTimerActive && state.study.endTime) {
-            // Modo Timer Ativo
             btn.textContent = "Cancelar";
             btn.style.background = "#ff4444";
-            btn.onclick = () => auraState.cancelStudyTimer(); // Override provisório ou refactor
-            // Nota: o listener original no init faz start, então isto é um hack simples visual. 
-            // Melhor seria ter 2 botões ou lógica de toggle no listener.
-            // Para robustez v1.2.0, vamos ajustar o btn click:
-
-            // Mas no render só atualizamos UI. O listener é estático.
-            // Vamos ajustar a UI para ocultar o input e mudar o botao.
+            btn.onclick = () => auraState.cancelStudyTimer();
             input.style.display = 'none';
 
             this.timerInterval = setInterval(() => {
@@ -282,22 +278,24 @@ class UIRenderer {
             }, 1000);
 
         } else {
-            // Modo Inativo
             btn.textContent = "Começar Sessão";
             btn.style.background = "var(--accent-color)";
+            // Hack para restaurar listener original ou recarregar
+            btn.onclick = null;
+            // Na verdade, o listener original addEventListener ainda está lá
+            // Mas ao sobrescrever onclick acima, podemos ter matado o addEventListener se não tiver cuidado.
+            // Para UI simples, melhor recarregar a página se cancelar para limpar listeners ou refazer init. 
+            // Mas para este escopo:
             display.textContent = "20:00";
             input.style.display = "block";
-            // Restaurar listener original se necessário, ou usar state checking no click
         }
     }
 
     updateUI(state) {
-        // Stats Globais
         document.getElementById('display-level').textContent = state.profile.level;
         document.getElementById('display-xp').textContent = `${state.profile.currentXP} / ${state.profile.nextLevelXP}`;
         document.getElementById('display-vault').textContent = `${state.bonusVault.current.toFixed(2)} €`;
 
-        // Checklists (Sync visual de todos)
         const checkMap = {
             'financial_review': ['check-finance-main'],
             'workout': ['check-workout-main', 'check-workout-health'],
@@ -312,15 +310,34 @@ class UIRenderer {
             });
         }
 
-        // Finance
         const f = state.finance;
         document.getElementById('val-op').textContent = `${f.buckets.operation.toFixed(2)} €`;
         document.getElementById('val-profit').textContent = `${f.buckets.profit.toFixed(2)} €`;
         document.getElementById('val-tax').textContent = `${f.buckets.tax.toFixed(2)} €`;
         document.getElementById('val-invest').textContent = `${f.buckets.investment.toFixed(2)} €`;
 
-        // Health
         document.getElementById('display-water').textContent = `${state.health.water}ml`;
+
+        // Render Transactions (v1.3.0)
+        const listEl = document.getElementById('transactions-list');
+        if (listEl) {
+            if (!f.transactions || f.transactions.length === 0) {
+                listEl.innerHTML = '<div style="text-align: center; opacity: 0.5; font-size: 0.8rem; padding: 10px;">Sem movimentos recentes</div>';
+            } else {
+                listEl.innerHTML = f.transactions.map(t => {
+                    const date = new Date(t.date).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                    return `
+                        <div class="transaction-item">
+                            <div class="transaction-info">
+                                <span style="font-weight: bold; color: white;">+${t.amount.toFixed(2)} €</span>
+                                <span class="transaction-meta">${date} | Lucro: ${t.split.profit.toFixed(2)}€</span>
+                            </div>
+                            <button class="btn-delete" data-id="${t.id}">🗑️</button>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
     }
 
     setupListeners() {
@@ -329,7 +346,6 @@ class UIRenderer {
                 if (navigator.serviceWorker && navigator.serviceWorker.controller) {
                     navigator.serviceWorker.controller.postMessage({ action: 'skipWaiting' });
                 }
-                // Forçar recarregamento real do servidor
                 window.location.reload(true);
             });
         }
