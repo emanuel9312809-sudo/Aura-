@@ -1,11 +1,11 @@
-const CACHE_NAME = 'aura-v1.7.5_fix-cache';
+const CACHE_NAME = 'aura-v1.7.6_StructureFix-cache';
 const FILES_TO_CACHE = [
     './',
     './index.html',
     './manifest.json',
-    './css/styles.css?v=1.7.5_fix',
+    './css/styles.css?v=1.7.6_StructureFix',
     './js/app-state.js',
-    './js/ui-render.js?v=1.7.5_fix'
+    './js/ui-render.js?v=1.7.6_StructureFix'
 ];
 
 self.addEventListener('install', (event) => {

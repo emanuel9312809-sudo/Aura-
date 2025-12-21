@@ -190,10 +190,13 @@ class UIRenderer {
 
                 <!-- VIEW: PERSONAL -->
                 <div id="view-personal" style="display:none;">
-                     <!-- v1.7.0 Minhas Contas -->
+                     <!-- v1.7.6_StructureFix: Minhas Contas Widget (Static Injection) -->
                      <div class="glass-card">
-                        <h3>Minhas Contas</h3>
-                        <div class="personal-accounts-scroll" id="personal-accounts-container">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <h3 style="margin:0;">Minhas Contas</h3>
+                            <button id="btn-quick-add-acc" style="background:var(--finance-color); border:none; color:black; border-radius:50%; width:24px; height:24px; font-weight:bold; cursor:pointer;" title="Adicionar Conta">+</button>
+                        </div>
+                        <div class="personal-accounts-scroll" id="accounts-scroll-view">
                             <!-- Filled by JS -->
                         </div>
                      </div>
@@ -417,6 +420,18 @@ class UIRenderer {
             const t = document.getElementById('input-study-topic').value;
             if (t) auraState.startStudyTimer(t);
         });
+
+        // v1.7.6_StructureFix Quick Add
+        const btnQuickAcc = document.getElementById('btn-quick-add-acc');
+        if (btnQuickAcc) {
+            btnQuickAcc.addEventListener('click', () => {
+                const name = prompt("Nome da conta:");
+                if (name) {
+                    const bal = parseFloat(prompt("Saldo inicial:") || "0");
+                    auraState.addAccount(name, bal);
+                }
+            });
+        }
     }
 
     switchTab(tabName) {
@@ -488,16 +503,10 @@ class UIRenderer {
             const persBal = buckets.profit + buckets.investment + state.bonusVault.current;
             document.getElementById('personal-balance-display').textContent = `${persBal.toFixed(2)} €`;
 
-            // v1.7.4 DEBUG: Minhas Contas List & Fallback
-            const pacContainer = document.getElementById('personal-accounts-container');
+            // v1.7.6_StructureFix: Minhas Contas List
+            const pacContainer = document.getElementById('accounts-scroll-view');
             if (pacContainer) {
-                // DEBUG AREA
-                const debugDump = document.createElement('div');
-                debugDump.style.cssText = "font-size:10px; color:yellow; background:black; padding:5px; margin-top:5px; word-break:break-all;";
-                debugDump.textContent = "DEBUG v1.7.4: " + JSON.stringify(accounts);
-
                 if (accounts && accounts.length > 0) {
-                    pacContainer.style.border = "1px solid green"; // DEBUG OK
                     pacContainer.innerHTML = accounts.map(a => `
                         <div class="personal-account-card">
                             <div class="pac-name">${a.name}</div>
@@ -505,13 +514,8 @@ class UIRenderer {
                         </div>
                     `).join('');
                 } else {
-                    pacContainer.style.border = "2px solid red"; // DEBUG EMPTY
-                    pacContainer.innerHTML = '<div style="color:var(--text-muted); font-size:0.8rem; padding:10px;">Sem contas criadas.</div>';
+                    pacContainer.innerHTML = '<div style="color:var(--text-muted); font-size:0.8rem; padding:10px;">Sem contas. Clique em +</div>';
                 }
-                // Append Debug info
-                pacContainer.parentNode.appendChild(debugDump);
-            } else {
-                console.error('UI: CRITICAL - Container #personal-accounts-container NOT FOUND in DOM.');
             }
 
             document.getElementById('vault-current').textContent = `${state.bonusVault.current.toFixed(0)} €`;
