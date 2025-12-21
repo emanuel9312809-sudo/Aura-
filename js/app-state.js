@@ -1,6 +1,6 @@
 /**
- * AURA - App State Management v1.2.0
- * Gestão centralizada do estado, lógica de divisão financeira, gamificação e Rotinas.
+ * AURA - App State Management v1.5.0
+ * Gestão centralizada do estado, incluindo Contas, Templates e Lógica Financeira Avançada.
  */
 
 class AuraState {
@@ -33,7 +33,13 @@ class AuraState {
                     investment: 'Investimento'
                 },
                 profitThisLevel: 0,
-                transactions: [] // History
+                transactions: [],
+                // v1.5.0 Modules
+                accounts: [
+                    { id: 'bank_main', name: 'Banco Principal', balance: 0, type: 'bank' },
+                    { id: 'cash_wallet', name: 'Carteira (Físico)', balance: 0, type: 'cash' }
+                ],
+                templates: []
             },
             health: {
                 water: 0,
@@ -84,8 +90,10 @@ class AuraState {
                         ...parsed.finance,
                         config: { ...this.state.finance.config, ...(parsed.finance?.config || {}) },
                         buckets: { ...this.state.finance.buckets, ...(parsed.finance?.buckets || {}) },
-                        labels: { ...this.state.finance.labels, ...(parsed.finance?.labels || {}) }, // Merge Labels
-                        transactions: parsed.finance?.transactions || [] // Ensure array
+                        labels: { ...this.state.finance.labels, ...(parsed.finance?.labels || {}) },
+                        transactions: parsed.finance?.transactions || [],
+                        accounts: parsed.finance?.accounts || this.defaultState.finance.accounts, // v1.5.0
+                        templates: parsed.finance?.templates || [] // v1.5.0
                     },
                     routine: { ...this.state.routine, ...(parsed.routine || {}) },
                     study: {
@@ -200,8 +208,6 @@ class AuraState {
         this.saveState();
     }
 
-    // --- Core Logic (Finance & XP) v1.4.0 ---
-
     updateBucketLabel(key, newLabel) {
         if (this.state.finance.labels.hasOwnProperty(key)) {
             this.state.finance.labels[key] = newLabel;
@@ -209,43 +215,90 @@ class AuraState {
         }
     }
 
-    // Novo método para Despesas
-    processExpense(amount, category) {
-        amount = parseFloat(amount);
-        if (isNaN(amount) || amount <= 0) return;
+    // --- Account Management v1.5.0 ---
+    addAccount(name, initialBalance = 0, type = 'bank') {
+        const id = 'acc_' + Date.now();
+        this.state.finance.accounts.push({ id, name, balance: parseFloat(initialBalance), type });
+        this.saveState();
+    }
 
-        const { buckets } = this.state.finance;
-
-        if (buckets.hasOwnProperty(category)) {
-            buckets[category] -= amount;
-            // Record Transaction (Expense)
-            if (!this.state.finance.transactions) this.state.finance.transactions = [];
-            this.state.finance.transactions.unshift({
-                id: Date.now(),
-                date: new Date().toISOString(),
-                type: 'expense', // v1.4.0
-                category: category,
-                amount: amount,
-                // Split é null para despesa direta, mas podemos guardar snapshot se quisermos
-                split: null
-            });
+    updateAccount(id, updates) {
+        const acc = this.state.finance.accounts.find(a => a.id === id);
+        if (acc) {
+            Object.assign(acc, updates);
             this.saveState();
         }
     }
 
-    processIncome(amount) {
+    deleteAccount(id) {
+        this.state.finance.accounts = this.state.finance.accounts.filter(a => a.id !== id);
+        this.saveState();
+    }
+
+    // --- Templates Management v1.5.0 ---
+    addTemplate(name, amount) {
+        this.state.finance.templates.push({ id: Date.now(), name, amount: parseFloat(amount) });
+        this.saveState();
+    }
+
+    deleteTemplate(id) {
+        this.state.finance.templates = this.state.finance.templates.filter(t => t.id !== id);
+        this.saveState();
+    }
+
+    // --- Core Logic (Finance & XP) v1.5.0 ---
+
+    // v1.5.0: Process Expense (Direct Bucket Deduction + Account Deduction)
+    processExpense(amount, category, accountId) {
         amount = parseFloat(amount);
         if (isNaN(amount) || amount <= 0) return;
 
-        const { config, buckets } = this.state.finance;
+        const { buckets, accounts } = this.state.finance;
 
-        // Calculate splits
+        // 1. Deduct from Bucket
+        if (buckets.hasOwnProperty(category)) {
+            buckets[category] -= amount;
+        }
+
+        // 2. Deduct from Account (if valid)
+        const acc = accounts.find(a => a.id === accountId);
+        if (acc) {
+            acc.balance -= amount;
+        } else {
+            console.warn('Conta não encontrada para despesa:', accountId);
+            // Fallback? Não, se não há conta, apenas abate no balde para não bloquear, 
+            // mas o ideal era forçar.
+        }
+
+        // 3. Record Transaction
+        if (!this.state.finance.transactions) this.state.finance.transactions = [];
+        this.state.finance.transactions.unshift({
+            id: Date.now(),
+            date: new Date().toISOString(),
+            type: 'expense',
+            category: category,
+            summary: this.state.finance.labels[category] || category, // store label snapshot
+            amount: amount,
+            accountId: accountId, // Track source
+            split: null
+        });
+        this.saveState();
+    }
+
+    // v1.5.0: Process Income (Bucket Distribution + Account Addition)
+    processIncome(amount, accountId) {
+        amount = parseFloat(amount);
+        if (isNaN(amount) || amount <= 0) return;
+
+        const { config, buckets, accounts } = this.state.finance;
+
+        // 1. Calculate splits
         const opOps = amount * (config.operation / 100);
         const opProfit = amount * (config.profit / 100);
         const opTax = amount * (config.tax / 100);
         const opInvest = amount * (config.investment / 100);
 
-        // Apply to buckets
+        // 2. Apply to buckets
         buckets.operation += opOps;
         buckets.profit += opProfit;
         buckets.tax += opTax;
@@ -253,14 +306,24 @@ class AuraState {
 
         this.state.finance.profitThisLevel += opProfit;
 
-        // Record Transaction (Income)
+        // 3. Add to Account
+        const acc = accounts.find(a => a.id === accountId);
+        if (acc) {
+            acc.balance += amount;
+        } else {
+            // Fallback: Add to first account or warn?
+            if (accounts.length > 0) accounts[0].balance += amount;
+        }
+
+        // 4. Record Transaction
         if (!this.state.finance.transactions) this.state.finance.transactions = [];
         this.state.finance.transactions.unshift({
             id: Date.now(),
             date: new Date().toISOString(),
-            type: 'income', // v1.4.0
-            category: null, // Global
+            type: 'income',
+            category: null,
             amount: amount,
+            accountId: accountId, // Track destination
             split: {
                 operation: opOps,
                 profit: opProfit,
@@ -270,47 +333,45 @@ class AuraState {
             configSnapshot: { ...config }
         });
 
-        // Limit history size (optional, e.g., 50 last)
         if (this.state.finance.transactions.length > 50) this.state.finance.transactions.pop();
 
         this.addXP(10);
         this.saveState();
     }
 
+    // v1.5.0: Delete (Revert both Buckets and Accounts)
     deleteTransaction(id) {
         const { finance } = this.state;
         const index = finance.transactions.findIndex(t => t.id === id);
-
-        if (index === -1) return; // Not found
+        if (index === -1) return;
 
         const t = finance.transactions[index];
+        const acc = finance.accounts.find(a => a.id === t.accountId);
 
         if (t.type === 'expense') {
-            // Reverter Despesa = Devolver dinheiro ao balde
+            // Revert Expense: Add back to Bucket & Account
             if (finance.buckets.hasOwnProperty(t.category)) {
                 finance.buckets[t.category] += t.amount;
-                console.log(`Despesa revertida. ${t.amount}€ devolvidos a ${t.category}`);
             }
+            if (acc) acc.balance += t.amount;
+
         } else {
-            // Revert Buckets (Income)
-            if (t.split) { // Ensure it's an income transaction with split data
+            // Revert Income: Subtract from Buckets & Account
+            if (t.split) {
                 finance.buckets.operation -= t.split.operation;
                 finance.buckets.profit -= t.split.profit;
                 finance.buckets.tax -= t.split.tax;
                 finance.buckets.investment -= t.split.investment;
 
-                // Revert Profit Level Tracker
                 finance.profitThisLevel -= t.split.profit;
-                if (finance.profitThisLevel < 0) finance.profitThisLevel = 0; // Safety floor
+                if (finance.profitThisLevel < 0) finance.profitThisLevel = 0;
             }
-            // Revert XP (Simple reversion of 10 XP for income)
+            if (acc) acc.balance -= t.amount;
             this.addXP(-10);
         }
 
-        // Remove from history
         finance.transactions.splice(index, 1);
-
-        console.log(`Transação ${id} apagada. Valores revertidos.`);
+        console.log(`Transação ${id} apagada. Valores revertidos v1.5.0.`);
         this.saveState();
     }
 
