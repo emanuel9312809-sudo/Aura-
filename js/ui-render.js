@@ -31,6 +31,35 @@ class UIRenderer {
 
     renderStructure() {
         this.appElement.innerHTML = `
+            <!-- TRANSACTION MODAL v1.8.0 -->
+            <div id="transaction-modal" class="modal-overlay">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 id="trans-modal-title">Registar Movimento</h2>
+                        <button class="modal-close" id="btn-close-trans-modal">×</button>
+                    </div>
+                    <div style="margin-top:20px;">
+                        <input type="number" id="p-trans-amount" placeholder="Valor (€)" step="0.01" style="width:100%; padding:10px; margin-bottom:15px; border-radius:8px; border:1px solid #333; background:#222; color:white;">
+                        
+                        <div id="p-trans-cat-container" style="margin-bottom:15px;">
+                             <label style="color:#aaa; font-size:0.8rem;">Categoria</label>
+                             <select id="p-trans-category" style="width:100%; padding:10px; border-radius:8px; border:1px solid #333; background:#222; color:white;">
+                                <option value="Essencial">Essencial</option>
+                                <option value="Lazer">Lazer</option>
+                                <option value="Investimento">Investimento</option>
+                             </select>
+                        </div>
+
+                        <label style="color:#aaa; font-size:0.8rem;" id="p-trans-acc-label">Conta</label>
+                        <select id="p-trans-account" style="width:100%; padding:10px; border-radius:8px; border:1px solid #333; background:#222; color:white; margin-bottom:20px;">
+                            <!-- Generic -->
+                        </select>
+
+                        <button id="btn-confirm-p-trans" class="primary" style="width:100%; padding:12px;">Confirmar</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- MODAL OVERLAY (v1.5.0) -->
             <div id="settings-modal" class="modal-overlay">
                 <div class="modal-content">
@@ -210,21 +239,14 @@ class UIRenderer {
                         <h3>Meu Património</h3>
                         <div style="font-size: 2.5rem; font-weight: bold; color: var(--finance-color);" id="personal-balance-display">0.00 €</div>
                     </div>
-                    <div class="glass-card">
-                         <h3>Bonus Vault (Next 1k)</h3>
-                         <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                            <span id="vault-current">0 €</span>
-                            <span id="vault-target">1000 €</span>
-                         </div>
-                         <div class="personal-progress-bar">
-                             <div class="personal-progress-fill" id="vault-progress-fill"></div>
-                         </div>
-                    </div>
+                    
+                    <!-- Bonus Vault Removed v1.8.0 -->
+
                     <div class="glass-card">
                          <h3>Ações Rápidas</h3>
                          <div style="display:flex; gap:10px;">
-                             <button class="primary expense-mode" id="btn-personal-spend" style="font-size:0.9rem;">🛍️ Gastar</button>
-                             <button class="primary" id="btn-personal-invest" style="font-size:0.9rem;">🚀 Investir</button>
+                             <button class="primary expense-mode" id="btn-personal-expense" style="font-size:0.9rem;">📉 Despesa</button>
+                             <button class="primary" id="btn-personal-income" style="font-size:0.9rem; background: var(--success-color, #00C853); border:none;">📈 Rendimento</button>
                          </div>
                     </div>
                 </div>
@@ -426,19 +448,52 @@ class UIRenderer {
             if (t) auraState.startStudyTimer(t);
         });
 
-        // v1.7.7_HotfixButton: Robust Event Delegation
-        // We attach to appElement (or document) to catch clicks even if the button was re-rendered.
-        this.appElement.addEventListener('click', (e) => {
-            // Check for Add Account Button (delegation) - REMOVED v1.7.10
-            /*
-            if (e.target.id === 'btn-quick-add-acc') {
-                const name = prompt("Nome da conta:");
-                if (name) {
-                    const bal = parseFloat(prompt("Saldo inicial:") || "0");
-                    auraState.addAccount(name, bal);
-                }
+        // --- Personal Quick Actions v1.8.0 ---
+        const transModal = document.getElementById('transaction-modal');
+        const pTransAmount = document.getElementById('p-trans-amount');
+        const pTransCat = document.getElementById('p-trans-category');
+        const pTransAcc = document.getElementById('p-trans-account');
+        const pTransCatContainer = document.getElementById('p-trans-cat-container');
+        const pTransTitle = document.getElementById('trans-modal-title');
+        let currentPTransType = 'expense';
+
+        const openPTransModal = (type) => {
+            currentPTransType = type;
+            transModal.classList.add('open');
+            pTransAmount.value = '';
+
+            // Populate Accounts
+            const accounts = auraState.state.finance.accounts;
+            pTransAcc.innerHTML = accounts.map(a => `<option value="${a.id}">${a.name} (${parseFloat(a.balance || 0).toFixed(2)}€)</option>`).join('');
+
+            if (type === 'expense') {
+                pTransTitle.textContent = 'Registar Despesa';
+                pTransTitle.style.color = '#ff4444';
+                pTransCatContainer.style.display = 'block';
+                document.getElementById('p-trans-acc-label').textContent = 'Conta de Origem';
+            } else {
+                pTransTitle.textContent = 'Registar Rendimento';
+                pTransTitle.style.color = 'var(--success-color, #00C853)';
+                pTransCatContainer.style.display = 'none'; // No category for simple income
+                document.getElementById('p-trans-acc-label').textContent = 'Conta de Destino';
             }
-            */
+        };
+
+        document.getElementById('btn-personal-expense').addEventListener('click', () => openPTransModal('expense'));
+        document.getElementById('btn-personal-income').addEventListener('click', () => openPTransModal('income'));
+        document.getElementById('btn-close-trans-modal').addEventListener('click', () => transModal.classList.remove('open'));
+
+        document.getElementById('btn-confirm-p-trans').addEventListener('click', () => {
+            const amt = pTransAmount.value;
+            const accId = pTransAcc.value;
+            const cat = currentPTransType === 'expense' ? pTransCat.value : null;
+
+            if (amt && accId) {
+                auraState.addPersonalTransaction(currentPTransType, amt, cat, accId);
+                transModal.classList.remove('open');
+            } else {
+                alert('Preencha o valor e selecione uma conta.');
+            }
         });
     }
 
@@ -533,96 +588,95 @@ class UIRenderer {
                 console.error('UI: Critical structure error - #accounts-scroll-view not found');
             }
 
-            document.getElementById('vault-current').textContent = `${state.bonusVault.current.toFixed(0)} €`;
-            const current = state.bonusVault.current;
-            const nextGoal = (Math.floor(current / 1000) + 1) * 1000;
-            document.getElementById('vault-target').textContent = `${nextGoal} €`;
-            const fill = document.getElementById('vault-progress-fill');
-            if (fill) fill.style.width = `${(current % 1000) / 1000 * 100}%`;
+        } else {
+            console.error('UI: Critical structure error - #accounts-scroll-view not found');
         }
 
-        // --- Standard Updates ---
-        // v1.7.5_fix Transaction Dropdown Logic
-        const accSelect = document.getElementById('select-account-transaction');
-        // Note: we want to preserve selection if possible, but options might change.
-        // Simplified: Just render.
-        if (accSelect) {
-            const currentVal = accSelect.value;
-            accSelect.innerHTML = accounts.map(a => `<option value="${a.id}">${a.name} (${parseFloat(a.balance).toFixed(2)}€)</option>`).join('');
-            // Restore if valid
-            if (currentVal && accounts.find(a => a.id === currentVal)) {
-                accSelect.value = currentVal;
-            }
-        }
+        // Vault UI removed v1.8.0
+    }
 
-        // Also update the Settings list while we are here
-        const settingsList = document.getElementById('accounts-list-settings');
-        if (settingsList) {
-            settingsList.innerHTML = accounts.map(a =>
-                `<div class="account-item"><span>${a.name} (${parseFloat(a.balance).toFixed(2)}€)</span><button class="btn-del-acc" data-id="${a.id}" style="color:red; background:none; border:none;">🗑️</button></div>`
-            ).join('');
+    // --- Standard Updates ---
+    // v1.7.5_fix Transaction Dropdown Logic
+    const accSelect = document.getElementById('select-account-transaction');
+    // Note: we want to preserve selection if possible, but options might change.
+    // Simplified: Just render.
+    if(accSelect) {
+        const currentVal = accSelect.value;
+        accSelect.innerHTML = accounts.map(a => `<option value="${a.id}">${a.name} (${parseFloat(a.balance).toFixed(2)}€)</option>`).join('');
+        // Restore if valid
+        if (currentVal && accounts.find(a => a.id === currentVal)) {
+            accSelect.value = currentVal;
         }
+    }
+
+    // Also update the Settings list while we are here
+    const settingsList = document.getElementById('accounts-list-settings');
+    if(settingsList) {
+        settingsList.innerHTML = accounts.map(a =>
+            `<div class="account-item"><span>${a.name} (${parseFloat(a.balance).toFixed(2)}€)</span><button class="btn-del-acc" data-id="${a.id}" style="color:red; background:none; border:none;">🗑️</button></div>`
+        ).join('');
+    }
 
         document.getElementById('templates-list-settings').innerHTML = templates.map(t => `<div class="account-item"><span>${t.name} (${t.amount}€)</span><button class="btn-del-tmpl" data-id="${t.id}" style="color:red; background:none; border:none;">×</button></div>`).join('');
 
-        const quickHTML = templates.map(t =>
-            `<button class="tmpl-pill" data-amount="${t.amount}" style="white-space:nowrap; background:rgba(255,255,255,0.1); border:1px solid #444; padding:5px 10px; border-radius:15px; color:#fff; cursor:pointer;">${t.name}</button>`
-        ).join('');
+    const quickHTML = templates.map(t =>
+        `<button class="tmpl-pill" data-amount="${t.amount}" style="white-space:nowrap; background:rgba(255,255,255,0.1); border:1px solid #444; padding:5px 10px; border-radius:15px; color:#fff; cursor:pointer;">${t.name}</button>`
+    ).join('');
         document.getElementById('quick-templates-container').innerHTML = quickHTML;
 
-        // Transaction List... (abbreviated, same as before)
-        const listEl = document.getElementById('transactions-list');
-        const txs = state.finance.transactions || [];
-        if (listEl) {
-            if (txs.length === 0) { listEl.innerHTML = '<div style="opacity:0.5; text-align:center;">Sem movimentos</div>'; }
-            else {
-                listEl.innerHTML = txs.map(t => {
-                    const date = new Date(t.date).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', hour: '2-digit' });
-                    const isExpense = t.type === 'expense';
-                    const sign = isExpense ? '-' : '+';
-                    const classColor = isExpense ? 'text-danger' : 'text-success';
-                    return `<div class="transaction-item"><div class="transaction-info"><span class="${classColor}" style="font-weight:bold">${sign}${t.amount.toFixed(2)} €</span><span class="transaction-meta">${date} • ${t.category || 'Venda'}</span></div><button class="btn-delete" data-id="${t.id}">🗑️</button></div>`;
-                }).join('');
-            }
+    // Transaction List... (abbreviated, same as before)
+    const listEl = document.getElementById('transactions-list');
+    const txs = state.finance.transactions || [];
+    if(listEl) {
+        if (txs.length === 0) { listEl.innerHTML = '<div style="opacity:0.5; text-align:center;">Sem movimentos</div>'; }
+        else {
+            listEl.innerHTML = txs.map(t => {
+                const date = new Date(t.date).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', hour: '2-digit' });
+                const isExpense = t.type === 'expense';
+                const sign = isExpense ? '-' : '+';
+                const classColor = isExpense ? 'text-danger' : 'text-success';
+                return `<div class="transaction-item"><div class="transaction-info"><span class="${classColor}" style="font-weight:bold">${sign}${t.amount.toFixed(2)} €</span><span class="transaction-meta">${date} • ${t.category || 'Venda'}</span></div><button class="btn-delete" data-id="${t.id}">🗑️</button></div>`;
+            }).join('');
         }
     }
+}
 
-    updateRadarChart(state) {
-        const poly = document.getElementById('radar-poly');
-        if (!poly) return;
+updateRadarChart(state) {
+    const poly = document.getElementById('radar-poly');
+    if (!poly) return;
 
-        const b = state.finance.buckets;
+    const b = state.finance.buckets;
 
-        // 1. Calculate Values
-        const valNeeds = b.operation + b.tax; // Top
-        const valGrow = b.investment;        // Right
-        const valSoul = b.profit + state.bonusVault.current; // Left
+    // 1. Calculate Values
+    const valNeeds = b.operation + b.tax; // Top
+    const valGrow = b.investment;        // Right
+    const valSoul = b.profit + state.bonusVault.current; // Left
 
-        // 2. Normalize (Scale of 0-80px)
-        const maxVal = Math.max(valNeeds, valGrow, valSoul, 100); // 100 min
-        const scale = (v) => (v / maxVal) * 80;
+    // 2. Normalize (Scale of 0-80px)
+    const maxVal = Math.max(valNeeds, valGrow, valSoul, 100); // 100 min
+    const scale = (v) => (v / maxVal) * 80;
 
-        const rNeeds = scale(valNeeds);
-        const rGrow = scale(valGrow);
-        const rSoul = scale(valSoul);
+    const rNeeds = scale(valNeeds);
+    const rGrow = scale(valGrow);
+    const rSoul = scale(valSoul);
 
-        // 3. Coordinates (Center 100,100)
-        // Top (-90 deg): x=100, y=100 - r
-        const x1 = 100;
-        const y1 = 100 - rNeeds;
+    // 3. Coordinates (Center 100,100)
+    // Top (-90 deg): x=100, y=100 - r
+    const x1 = 100;
+    const y1 = 100 - rNeeds;
 
-        // BR (30 deg): x=100 + cos(30)*r, y=100 + sin(30)*r
-        const rad30 = 30 * Math.PI / 180;
-        const x2 = 100 + Math.cos(rad30) * rGrow;
-        const y2 = 100 + Math.sin(rad30) * rGrow;
+    // BR (30 deg): x=100 + cos(30)*r, y=100 + sin(30)*r
+    const rad30 = 30 * Math.PI / 180;
+    const x2 = 100 + Math.cos(rad30) * rGrow;
+    const y2 = 100 + Math.sin(rad30) * rGrow;
 
-        // BL (150 deg): x=100 + cos(150)*r, y=100 + sin(150)*r
-        const rad150 = 150 * Math.PI / 180;
-        const x3 = 100 + Math.cos(rad150) * rSoul;
-        const y3 = 100 + Math.sin(rad150) * rSoul;
+    // BL (150 deg): x=100 + cos(150)*r, y=100 + sin(150)*r
+    const rad150 = 150 * Math.PI / 180;
+    const x3 = 100 + Math.cos(rad150) * rSoul;
+    const y3 = 100 + Math.sin(rad150) * rSoul;
 
-        poly.setAttribute('points', `${x1},${y1} ${x2},${y2} ${x3},${y3}`);
-    }
+    poly.setAttribute('points', `${x1},${y1} ${x2},${y2} ${x3},${y3}`);
+}
 }
 
 export const uiRenderer = new UIRenderer();

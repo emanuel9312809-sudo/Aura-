@@ -439,6 +439,43 @@ class AuraState {
     getPersonalBalance() {
         return this.state.finance.buckets.profit + this.state.finance.buckets.investment + this.state.bonusVault.current;
     }
+    // --- Personal Finance v1.8.0 ---
+    addPersonalTransaction(type, amount, category, accountId) {
+        amount = parseFloat(amount);
+        if (isNaN(amount) || amount <= 0) return;
+
+        const { accounts } = this.state.finance;
+        const acc = accounts.find(a => a.id === accountId);
+
+        if (!acc) {
+            console.error("Personal Transaction: Account not found", accountId);
+            return;
+        }
+
+        if (type === 'expense') {
+            acc.balance -= amount;
+        } else if (type === 'income') {
+            acc.balance += amount;
+        }
+
+        // Record it
+        if (!this.state.finance.transactions) this.state.finance.transactions = [];
+        this.state.finance.transactions.unshift({
+            id: Date.now(),
+            date: new Date().toISOString(),
+            type: type, // 'expense' or 'income'
+            category: category, // 'Essencial', 'Lazer', 'Investimento' (or null for income)
+            summary: category || 'Rendimento Pessoal',
+            amount: amount,
+            accountId: accountId,
+            split: null, // No business split
+            description: 'Movimento Pessoal'
+        });
+
+        if (this.state.finance.transactions.length > 50) this.state.finance.transactions.pop();
+        this.saveState();
+        console.log(`Personal Transaction: ${type} ${amount}€ (${category}) -> ${acc.name}`);
+    }
 }
 
 export const auraState = new AuraState();
