@@ -416,6 +416,14 @@ class AuraState {
             console.log(`Level Up! Nível ${profile.level}. Bonus: ${bonusAmount.toFixed(2)}€`);
         }
     }
+    // --- Visual Analytics Helpers v1.6.0 ---
+    getBusinessBalance() {
+        return this.state.finance.buckets.operation + this.state.finance.buckets.tax;
+    }
+
+    getPersonalBalance() {
+        return this.state.finance.buckets.profit + this.state.finance.buckets.investment + this.state.bonusVault.current;
+    }
 }
 
 export const auraState = new AuraState();
