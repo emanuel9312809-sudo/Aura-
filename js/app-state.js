@@ -25,8 +25,15 @@ class AuraState {
                     tax: 0,
                     investment: 0
                 },
+                // CUSTOM LABELS v1.4.0
+                labels: {
+                    operation: 'Operação',
+                    profit: 'Lucro',
+                    tax: 'Impostos',
+                    investment: 'Investimento'
+                },
                 profitThisLevel: 0,
-                transactions: [] // v1.3.0 History
+                transactions: [] // History
             },
             health: {
                 water: 0,
@@ -53,11 +60,11 @@ class AuraState {
             }
         };
 
-        // Deep copy clean state
+        // Deep copy
         this.state = JSON.parse(JSON.stringify(this.defaultState));
         this.listeners = [];
         this.loadState();
-        this.checkDailyReset(); // Verifica reset ao iniciar
+        this.checkDailyReset();
     }
 
     // --- Persistência ---
@@ -68,7 +75,7 @@ class AuraState {
             try {
                 const parsed = JSON.parse(savedState);
 
-                // Merge inteligente para manter compatibilidade com v1.0/v1.1
+                // Merge inteligente
                 this.state = {
                     ...this.state,
                     ...parsed,
@@ -77,13 +84,14 @@ class AuraState {
                         ...parsed.finance,
                         config: { ...this.state.finance.config, ...(parsed.finance?.config || {}) },
                         buckets: { ...this.state.finance.buckets, ...(parsed.finance?.buckets || {}) },
+                        labels: { ...this.state.finance.labels, ...(parsed.finance?.labels || {}) }, // Merge Labels
                         transactions: parsed.finance?.transactions || [] // Ensure array
                     },
                     routine: { ...this.state.routine, ...(parsed.routine || {}) },
                     study: {
                         ...this.state.study,
                         ...(parsed.study || {}),
-                        history: parsed.study?.history || [] // Garantir array
+                        history: parsed.study?.history || []
                     }
                 };
             } catch (e) {
@@ -106,7 +114,7 @@ class AuraState {
         this.listeners.forEach(listener => listener(this.state));
     }
 
-    // --- Rotinas V1.2.0 ---
+    // --- Rotinas ---
 
     checkDailyReset() {
         const today = new Date().toISOString().split('T')[0];
@@ -148,7 +156,7 @@ class AuraState {
         }
     }
 
-    // --- Estudo V1.2.0 ---
+    // --- Estudo ---
 
     startStudyTimer(topic, durationMinutes = 20) {
         if (this.state.study.isTimerActive) return;
@@ -192,7 +200,38 @@ class AuraState {
         this.saveState();
     }
 
-    // --- Core Logic (Finance & XP) v1.3.0 ---
+    // --- Core Logic (Finance & XP) v1.4.0 ---
+
+    updateBucketLabel(key, newLabel) {
+        if (this.state.finance.labels.hasOwnProperty(key)) {
+            this.state.finance.labels[key] = newLabel;
+            this.saveState();
+        }
+    }
+
+    // Novo método para Despesas
+    processExpense(amount, category) {
+        amount = parseFloat(amount);
+        if (isNaN(amount) || amount <= 0) return;
+
+        const { buckets } = this.state.finance;
+
+        if (buckets.hasOwnProperty(category)) {
+            buckets[category] -= amount;
+            // Record Transaction (Expense)
+            if (!this.state.finance.transactions) this.state.finance.transactions = [];
+            this.state.finance.transactions.unshift({
+                id: Date.now(),
+                date: new Date().toISOString(),
+                type: 'expense', // v1.4.0
+                category: category,
+                amount: amount,
+                // Split é null para despesa direta, mas podemos guardar snapshot se quisermos
+                split: null
+            });
+            this.saveState();
+        }
+    }
 
     processIncome(amount) {
         amount = parseFloat(amount);
@@ -214,11 +253,13 @@ class AuraState {
 
         this.state.finance.profitThisLevel += opProfit;
 
-        // Record Transaction (v1.3.0)
+        // Record Transaction (Income)
         if (!this.state.finance.transactions) this.state.finance.transactions = [];
         this.state.finance.transactions.unshift({
             id: Date.now(),
             date: new Date().toISOString(),
+            type: 'income', // v1.4.0
+            category: null, // Global
             amount: amount,
             split: {
                 operation: opOps,
@@ -244,18 +285,27 @@ class AuraState {
 
         const t = finance.transactions[index];
 
-        // Revert Buckets
-        finance.buckets.operation -= t.split.operation;
-        finance.buckets.profit -= t.split.profit;
-        finance.buckets.tax -= t.split.tax;
-        finance.buckets.investment -= t.split.investment;
+        if (t.type === 'expense') {
+            // Reverter Despesa = Devolver dinheiro ao balde
+            if (finance.buckets.hasOwnProperty(t.category)) {
+                finance.buckets[t.category] += t.amount;
+                console.log(`Despesa revertida. ${t.amount}€ devolvidos a ${t.category}`);
+            }
+        } else {
+            // Revert Buckets (Income)
+            if (t.split) { // Ensure it's an income transaction with split data
+                finance.buckets.operation -= t.split.operation;
+                finance.buckets.profit -= t.split.profit;
+                finance.buckets.tax -= t.split.tax;
+                finance.buckets.investment -= t.split.investment;
 
-        // Revert Profit Level Tracker
-        finance.profitThisLevel -= t.split.profit;
-        if (finance.profitThisLevel < 0) finance.profitThisLevel = 0; // Safety floor
-
-        // Revert XP (Simple reversion of 10 XP)
-        this.addXP(-10);
+                // Revert Profit Level Tracker
+                finance.profitThisLevel -= t.split.profit;
+                if (finance.profitThisLevel < 0) finance.profitThisLevel = 0; // Safety floor
+            }
+            // Revert XP (Simple reversion of 10 XP for income)
+            this.addXP(-10);
+        }
 
         // Remove from history
         finance.transactions.splice(index, 1);

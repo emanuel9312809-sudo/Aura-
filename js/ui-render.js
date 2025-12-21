@@ -1,6 +1,6 @@
 /**
- * AURA - UI Render Engine v1.3.0
- * Interface completa com Histórico Financeiro, Glassmorphism e Undo Logic.
+ * AURA - UI Render Engine v1.4.0 (Finance 2.0)
+ * Interface avançada com Despesas, Custom Labels e Histórico.
  */
 import { auraState } from './app-state.js';
 
@@ -10,6 +10,7 @@ class UIRenderer {
         this.updateBtn = document.getElementById('update-btn');
         this.activeTab = 'aura';
         this.timerInterval = null;
+        this.transactionMode = 'income'; // 'income' (Venda) or 'expense' (Despesa)
         this.init();
     }
 
@@ -24,8 +25,12 @@ class UIRenderer {
     }
 
     renderStructure() {
+        // Nota: A estrutura HTML agora é dinâmica baseada em labels, mas o shell inicial é fixo.
+        // Os listeners precisam ser re-anexados se re-renderizarmos tudo? 
+        // Sim. Vamos manter a estratégia ideal para SPA: Render inicial + Update dinâmico.
+
         this.appElement.innerHTML = `
-            <!-- Tab ROTINA (Ex-Aura) -->
+            <!-- Tab ROTINA -->
             <div id="tab-aura" class="tab-content active">
                 <div id="aura-orb-container"></div>
                 <div class="glass-card">
@@ -54,37 +59,52 @@ class UIRenderer {
             <!-- Tab FINANÇA -->
             <div id="tab-finance" class="tab-content">
                 <div class="glass-card">
-                    <h2>Registo de Venda</h2>
-                    <input type="number" id="input-income" placeholder="Valor (€)" step="0.01">
-                    <button class="primary" id="btn-add-income">Registar Venda</button>
+                    <h2>Registo</h2>
+                    
+                    <div class="toggle-container">
+                        <button class="toggle-btn active income" id="btn-mode-income">Venda (Entrada)</button>
+                        <button class="toggle-btn expense" id="btn-mode-expense">Despesa (Saída)</button>
+                    </div>
+
+                    <input type="number" id="input-transaction-amount" placeholder="Valor (€)" step="0.01">
+                    
+                    <div id="expense-category-container" style="display: none;">
+                        <label style="font-size: 0.9rem; margin-bottom: 5px; display: block; color: var(--text-muted);">De onde sai o dinheiro?</label>
+                        <select id="select-expense-bucket">
+                            <!-- Preenchido via JS -->
+                        </select>
+                    </div>
+
+                    <button class="primary" id="btn-submit-transaction">Registar Venda</button>
                 </div>
 
                 <div class="glass-card">
-                    <h2>Baldes de Rendimento</h2>
-                    <div class="stat-row"><span>Operação (<span id="perc-op">60</span>%)</span><span id="val-op" class="text-success">0.00 €</span></div>
-                    <div class="stat-row"><span>Lucro (<span id="perc-profit">20</span>%)</span><span id="val-profit" class="text-success">0.00 €</span></div>
-                    <div class="stat-row"><span>Impostos (<span id="perc-tax">15</span>%)</span><span id="val-tax" class="text-success">0.00 €</span></div>
-                    <div class="stat-row"><span>Investimento (<span id="perc-invest">5</span>%)</span><span id="val-invest" class="text-success">0.00 €</span></div>
+                    <h2>Baldes</h2>
+                    <div class="stat-row"><span id="lbl-display-op">Operação</span> <span id="val-op" class="text-success">0.00 €</span></div>
+                    <div class="stat-row"><span id="lbl-display-profit">Lucro</span> <span id="val-profit" class="text-success">0.00 €</span></div>
+                    <div class="stat-row"><span id="lbl-display-tax">Impostos</span> <span id="val-tax" class="text-success">0.00 €</span></div>
+                    <div class="stat-row"><span id="lbl-display-invest">Investimento</span> <span id="val-invest" class="text-success">0.00 €</span></div>
                 </div>
 
                 <div class="glass-card">
                     <h2>Últimos Movimentos</h2>
-                    <div id="transactions-list">
-                        <!-- Injetado via JS -->
-                        <div style="text-align: center; opacity: 0.5; font-size: 0.8rem; padding: 10px;">Sem movimentos recentes</div>
-                    </div>
+                    <div id="transactions-list"></div>
                 </div>
 
                  <div class="glass-card">
                     <h2>Configurações (%)</h2>
-                    <label>Op: <span id="lbl-op">60</span>%</label>
+                    <label><input type="text" class="bucket-label-input" id="edit-lbl-op" value="Operação">: <span id="perc-op">60</span>%</label>
                     <input type="range" id="slider-op" min="0" max="100" value="60">
-                    <label>Lucro: <span id="lbl-profit">20</span>%</label>
+                    
+                    <label><input type="text" class="bucket-label-input" id="edit-lbl-profit" value="Lucro">: <span id="perc-profit">20</span>%</label>
                     <input type="range" id="slider-profit" min="0" max="100" value="20">
-                    <label>Tax: <span id="lbl-tax">15</span>%</label>
+                    
+                    <label><input type="text" class="bucket-label-input" id="edit-lbl-tax" value="Impostos">: <span id="perc-tax">15</span>%</label>
                     <input type="range" id="slider-tax" min="0" max="100" value="15">
-                    <label>Inv: <span id="lbl-invest">5</span>%</label>
+                    
+                    <label><input type="text" class="bucket-label-input" id="edit-lbl-invest" value="Investimento">: <span id="perc-invest">5</span>%</label>
                     <input type="range" id="slider-invest" min="0" max="100" value="5">
+                    
                     <small>Total: <span id="slider-total">100</span>%</small>
                 </div>
             </div>
@@ -98,6 +118,7 @@ class UIRenderer {
                         <span id="display-water" style="font-size: 0.8rem; opacity: 0.8">0ml</span>
                     </button>
                 </div>
+                <!-- Checklist item sync -->
                 <div class="glass-card" style="display: flex; align-items: center; justify-content: space-between;">
                     <span>Treino do Dia</span>
                     <input type="checkbox" id="check-workout-health" data-key="workout" style="transform: scale(1.5);">
@@ -123,23 +144,18 @@ class UIRenderer {
                 </div>
             </div>
 
-            <!-- Bottom Navigation -->
             <nav class="nav-bar">
                 <a class="nav-item active" data-tab="aura">
-                    <span style="font-size: 1.2rem;">✨</span>
-                    Rotina
+                    <span style="font-size: 1.2rem;">✨</span> Rotina
                 </a>
                 <a class="nav-item" data-tab="finance">
-                    <span style="font-size: 1.2rem;">💰</span>
-                    Finança
+                    <span style="font-size: 1.2rem;">💰</span> Finança
                 </a>
                 <a class="nav-item" data-tab="health">
-                    <span style="font-size: 1.2rem;">❤️</span>
-                    Saúde
+                    <span style="font-size: 1.2rem;">❤️</span> Saúde
                 </a>
                 <a class="nav-item" data-tab="mind">
-                    <span style="font-size: 1.2rem;">🧠</span>
-                    Mente
+                    <span style="font-size: 1.2rem;">🧠</span> Mente
                 </a>
             </nav>
         `;
@@ -163,6 +179,7 @@ class UIRenderer {
     }
 
     setupInternalListeners() {
+        // --- Navigation ---
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 const target = e.currentTarget.getAttribute('data-tab');
@@ -170,47 +187,91 @@ class UIRenderer {
             });
         });
 
-        document.getElementById('btn-add-income').addEventListener('click', () => {
-            const val = document.getElementById('input-income').value;
-            if (val) {
-                auraState.processIncome(val);
-                document.getElementById('input-income').value = '';
+        // --- Finance 2.0 Logic ---
+        // Toggle Buttons
+        const btnIncome = document.getElementById('btn-mode-income');
+        const btnExpense = document.getElementById('btn-mode-expense');
+        const submitBtn = document.getElementById('btn-submit-transaction');
+        const expenseContainer = document.getElementById('expense-category-container');
+
+        const setMode = (mode) => {
+            this.transactionMode = mode;
+            if (mode === 'income') {
+                btnIncome.classList.add('active');
+                btnExpense.classList.remove('active');
+                expenseContainer.style.display = 'none';
+                submitBtn.textContent = 'Registar Venda';
+                submitBtn.classList.remove('expense-mode');
+            } else {
+                btnExpense.classList.add('active');
+                btnIncome.classList.remove('active');
+                expenseContainer.style.display = 'block';
+                submitBtn.textContent = 'Registar Despesa';
+                submitBtn.classList.add('expense-mode');
             }
+        };
+
+        btnIncome.addEventListener('click', () => setMode('income'));
+        btnExpense.addEventListener('click', () => setMode('expense'));
+
+        // Submit Transaction
+        submitBtn.addEventListener('click', () => {
+            const amt = document.getElementById('input-transaction-amount').value;
+            if (!amt) return;
+
+            if (this.transactionMode === 'income') {
+                auraState.processIncome(amt);
+            } else {
+                const cat = document.getElementById('select-expense-bucket').value;
+                auraState.processExpense(amt, cat);
+            }
+            document.getElementById('input-transaction-amount').value = '';
         });
 
-        // Event Delegation para Botão Delete (Listado dinamicamente)
-        document.getElementById('transactions-list').addEventListener('click', (e) => {
-            // Check se clicou no botão ou ícone (usar closest)
-            const btn = e.target.closest('.btn-delete');
-            if (btn) {
-                const id = parseInt(btn.getAttribute('data-id'));
-                if (confirm('Tens a certeza que queres reverter esta transação?')) {
-                    auraState.deleteTransaction(id);
-                }
-            }
-        });
+        // Label Editing (Inputs in Config)
+        const labelInputs = [
+            { id: 'edit-lbl-op', key: 'operation' },
+            { id: 'edit-lbl-profit', key: 'profit' },
+            { id: 'edit-lbl-tax', key: 'tax' },
+            { id: 'edit-lbl-invest', key: 'investment' }
+        ];
 
-        const checklistCheckboxes = document.querySelectorAll('input[type="checkbox"][data-key]');
-        checklistCheckboxes.forEach(box => {
-            box.addEventListener('change', (e) => {
-                const key = e.target.getAttribute('data-key');
-                auraState.toggleChecklistItem(key);
+        labelInputs.forEach(item => {
+            document.getElementById(item.id).addEventListener('change', (e) => {
+                const newVal = e.target.value;
+                if (newVal) auraState.updateBucketLabel(item.key, newVal);
             });
         });
 
+        // Sliders
         const sliders = ['slider-op', 'slider-profit', 'slider-tax', 'slider-invest'];
         sliders.forEach(id => {
             document.getElementById(id).addEventListener('input', () => this.handleConfigChange());
         });
 
-        document.getElementById('btn-water').addEventListener('click', () => auraState.addWater());
+        // Transactions List Delete (Delegation)
+        document.getElementById('transactions-list').addEventListener('click', (e) => {
+            const btn = e.target.closest('.btn-delete');
+            if (btn) {
+                const id = parseInt(btn.getAttribute('data-id'));
+                if (confirm('Reverter esta transação?')) {
+                    auraState.deleteTransaction(id);
+                }
+            }
+        });
 
+        // Checklist
+        document.querySelectorAll('input[type="checkbox"][data-key]').forEach(box => {
+            box.addEventListener('change', (e) => {
+                auraState.toggleChecklistItem(e.target.getAttribute('data-key'));
+            });
+        });
+
+        // Others
+        document.getElementById('btn-water').addEventListener('click', () => auraState.addWater());
         document.getElementById('btn-start-timer').addEventListener('click', () => {
             const topic = document.getElementById('input-study-topic').value;
-            if (!topic) {
-                alert('Escreve o que vais estudar!');
-                return;
-            }
+            if (!topic) { alert('Escreve o tópico!'); return; }
             auraState.startStudyTimer(topic, 20);
         });
     }
@@ -231,26 +292,23 @@ class UIRenderer {
         const tax = parseInt(document.getElementById('slider-tax').value) || 0;
         const invest = parseInt(document.getElementById('slider-invest').value) || 0;
 
-        document.getElementById('lbl-op').textContent = op;
-        document.getElementById('lbl-profit').textContent = profit;
-        document.getElementById('lbl-tax').textContent = tax;
-        document.getElementById('lbl-invest').textContent = invest;
+        document.getElementById('perc-op').textContent = op;
+        document.getElementById('perc-profit').textContent = profit;
+        document.getElementById('perc-tax').textContent = tax;
+        document.getElementById('perc-invest').textContent = invest;
 
         const total = op + profit + tax + invest;
         const totalEl = document.getElementById('slider-total');
         totalEl.textContent = total;
+        totalEl.style.color = total === 100 ? 'var(--finance-color)' : 'red';
 
         if (total === 100) {
-            totalEl.style.color = 'var(--finance-color)';
             auraState.updateFinanceConfig({ operation: op, profit: profit, tax: tax, investment: invest });
-        } else {
-            totalEl.style.color = 'red';
         }
     }
 
     handleTimerState(state) {
         if (this.timerInterval) clearInterval(this.timerInterval);
-
         const btn = document.getElementById('btn-start-timer');
         const display = document.getElementById('timer-display');
         const input = document.getElementById('input-study-topic');
@@ -260,48 +318,42 @@ class UIRenderer {
             btn.style.background = "#ff4444";
             btn.onclick = () => auraState.cancelStudyTimer();
             input.style.display = 'none';
-
             this.timerInterval = setInterval(() => {
                 const now = Date.now();
                 const diff = state.study.endTime - now;
-
                 if (diff <= 0) {
                     clearInterval(this.timerInterval);
                     auraState.completeStudyTimer();
-                    alert("Sessão de estudo concluída! +100 XP");
+                    alert("Sessão concluída!");
                     return;
                 }
-
                 const m = Math.floor(diff / 60000);
                 const s = Math.floor((diff % 60000) / 1000);
                 display.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
             }, 1000);
-
         } else {
             btn.textContent = "Começar Sessão";
             btn.style.background = "var(--accent-color)";
-            // Hack para restaurar listener original ou recarregar
-            btn.onclick = null;
-            // Na verdade, o listener original addEventListener ainda está lá
-            // Mas ao sobrescrever onclick acima, podemos ter matado o addEventListener se não tiver cuidado.
-            // Para UI simples, melhor recarregar a página se cancelar para limpar listeners ou refazer init. 
-            // Mas para este escopo:
+            btn.onclick = null; // Clean onclick override, relying on addEventListener
             display.textContent = "20:00";
             input.style.display = "block";
         }
     }
 
     updateUI(state) {
+        const { labels, buckets } = state.finance;
+
+        // update global stats
         document.getElementById('display-level').textContent = state.profile.level;
         document.getElementById('display-xp').textContent = `${state.profile.currentXP} / ${state.profile.nextLevelXP}`;
         document.getElementById('display-vault').textContent = `${state.bonusVault.current.toFixed(2)} €`;
 
+        // sync checklists
         const checkMap = {
             'financial_review': ['check-finance-main'],
             'workout': ['check-workout-main', 'check-workout-health'],
             'technical_study': ['check-study-main', 'check-study-mind']
         };
-
         for (const [key, ids] of Object.entries(checkMap)) {
             const val = state.routine.checklist[key];
             ids.forEach(id => {
@@ -310,34 +362,78 @@ class UIRenderer {
             });
         }
 
-        const f = state.finance;
-        document.getElementById('val-op').textContent = `${f.buckets.operation.toFixed(2)} €`;
-        document.getElementById('val-profit').textContent = `${f.buckets.profit.toFixed(2)} €`;
-        document.getElementById('val-tax').textContent = `${f.buckets.tax.toFixed(2)} €`;
-        document.getElementById('val-invest').textContent = `${f.buckets.investment.toFixed(2)} €`;
+        // Finance - Update Labels in Buckets Display
+        document.getElementById('lbl-display-op').textContent = labels.operation;
+        document.getElementById('lbl-display-profit').textContent = labels.profit;
+        document.getElementById('lbl-display-tax').textContent = labels.tax;
+        document.getElementById('lbl-display-invest').textContent = labels.investment;
+
+        // Finance - Update Values
+        document.getElementById('val-op').textContent = `${buckets.operation.toFixed(2)} €`;
+        document.getElementById('val-profit').textContent = `${buckets.profit.toFixed(2)} €`;
+        document.getElementById('val-tax').textContent = `${buckets.tax.toFixed(2)} €`;
+        document.getElementById('val-invest').textContent = `${buckets.investment.toFixed(2)} €`;
+
+        // Finance - Update Labels in Config Inputs
+        // Only update if not focused to avoid typing interruption? 
+        // For simplicity, we assume single user sync. 
+        const setInputValue = (id, val) => {
+            const el = document.getElementById(id);
+            if (document.activeElement !== el) el.value = val;
+        };
+        setInputValue('edit-lbl-op', labels.operation);
+        setInputValue('edit-lbl-profit', labels.profit);
+        setInputValue('edit-lbl-tax', labels.tax);
+        setInputValue('edit-lbl-invest', labels.investment);
+
+        // Finance - Update Expense Dropdown Labels
+        const select = document.getElementById('select-expense-bucket');
+        if (select) {
+            const currentVal = select.value;
+            select.innerHTML = `
+                <option value="operation">${labels.operation}</option>
+                <option value="profit">${labels.profit}</option>
+                <option value="tax">${labels.tax}</option>
+                <option value="investment">${labels.investment}</option>
+             `;
+            if (currentVal) select.value = currentVal;
+        }
+
+        // Transactions History
+        const listEl = document.getElementById('transactions-list');
+        const txs = state.finance.transactions || [];
+        if (txs.length === 0) {
+            listEl.innerHTML = '<div style="text-align: center; opacity: 0.5; font-size: 0.8rem; padding: 10px;">Sem movimentos recentes</div>';
+        } else {
+            listEl.innerHTML = txs.map(t => {
+                const date = new Date(t.date).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                const isExpense = t.type === 'expense';
+                const sign = isExpense ? '-' : '+';
+                const icon = isExpense ? '📉' : '📈';
+                const colorClass = isExpense ? 'text-danger' : 'text-success';
+
+                // Determine desc
+                let desc = 'Venda';
+                if (t.type === 'expense') {
+                    // Get label for category
+                    desc = labels[t.category] || t.category;
+                } else if (t.split) {
+                    desc = `Lucro: ${t.split.profit.toFixed(2)}€`;
+                }
+
+                return `
+                    <div class="transaction-item">
+                        <div class="transaction-info">
+                            <span style="font-weight: bold;" class="${colorClass}">${sign}${t.amount.toFixed(2)} €</span>
+                            <span class="transaction-meta">${icon} ${date} | ${desc}</span>
+                        </div>
+                        <button class="btn-delete" data-id="${t.id}">🗑️</button>
+                    </div>
+                `;
+            }).join('');
+        }
 
         document.getElementById('display-water').textContent = `${state.health.water}ml`;
-
-        // Render Transactions (v1.3.0)
-        const listEl = document.getElementById('transactions-list');
-        if (listEl) {
-            if (!f.transactions || f.transactions.length === 0) {
-                listEl.innerHTML = '<div style="text-align: center; opacity: 0.5; font-size: 0.8rem; padding: 10px;">Sem movimentos recentes</div>';
-            } else {
-                listEl.innerHTML = f.transactions.map(t => {
-                    const date = new Date(t.date).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-                    return `
-                        <div class="transaction-item">
-                            <div class="transaction-info">
-                                <span style="font-weight: bold; color: white;">+${t.amount.toFixed(2)} €</span>
-                                <span class="transaction-meta">${date} | Lucro: ${t.split.profit.toFixed(2)}€</span>
-                            </div>
-                            <button class="btn-delete" data-id="${t.id}">🗑️</button>
-                        </div>
-                    `;
-                }).join('');
-            }
-        }
     }
 
     setupListeners() {
@@ -352,9 +448,7 @@ class UIRenderer {
     }
 
     showUpdateNotification() {
-        if (this.updateBtn) {
-            this.updateBtn.classList.add('visible');
-        }
+        if (this.updateBtn) this.updateBtn.classList.add('visible');
     }
 }
 

@@ -5,6 +5,8 @@
   --text-muted: #a0a0a0;
   --accent-color: #00d4ff;
   --finance-color: #00ff9d;
+  --expense-color: #ff4444;
+  /* Nova cor para despesas */
   --health-color: #ff0055;
   --mind-color: #bf00ff;
   --font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -40,7 +42,7 @@ html {
   overflow-y: auto;
 }
 
-/* Glassmorphism Classes (v1.3.0) */
+/* Glassmorphism */
 .glass-card {
   background: rgba(30, 30, 30, 0.6);
   backdrop-filter: blur(12px);
@@ -52,16 +54,16 @@ html {
   margin-bottom: 16px;
 }
 
-/* Color Utilities (v1.3.0) */
+/* Color Utilities */
 .text-success {
   color: var(--finance-color);
 }
 
 .text-danger {
-  color: #ff4444;
+  color: var(--expense-color);
 }
 
-/* Navigation Bar */
+/* Navigation */
 .nav-bar {
   position: fixed;
   bottom: 0;
@@ -70,7 +72,6 @@ html {
   height: calc(var(--nav-height) + var(--safe-area-inset-bottom));
   background: rgba(30, 30, 30, 0.8);
   backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   display: flex;
   justify-content: space-around;
   align-items: flex-start;
@@ -133,14 +134,7 @@ html {
   }
 }
 
-/* Base Card Style (Legacy support or fallback) */
-.card {
-  background-color: var(--bg-card);
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-}
-
+/* Elements */
 h2 {
   font-size: 1.1rem;
   font-weight: 600;
@@ -154,9 +148,10 @@ h2 {
   justify-content: space-between;
   margin-bottom: 8px;
   font-size: 0.9rem;
+  align-items: center;
 }
 
-/* Transactions List (v1.3.0) */
+/* Transactions List */
 .transaction-item {
   display: flex;
   justify-content: space-between;
@@ -212,8 +207,10 @@ h2 {
   accent-color: var(--accent-color);
 }
 
+/* Inputs */
 input[type="number"],
-input[type="text"] {
+input[type="text"],
+select {
   width: 100%;
   padding: 12px;
   background: rgba(0, 0, 0, 0.2);
@@ -222,6 +219,24 @@ input[type="text"] {
   color: white;
   font-size: 1rem;
   margin-bottom: 12px;
+}
+
+/* Config Label Edits */
+.bucket-label-input {
+  border: none !important;
+  background: transparent !important;
+  color: var(--text-color) !important;
+  font-weight: bold;
+  width: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.3) !important;
+  border-radius: 0 !important;
+}
+
+.bucket-label-input:focus {
+  border-bottom: 1px solid var(--accent-color) !important;
+  outline: none;
 }
 
 button.primary {
@@ -242,6 +257,12 @@ button.primary:active {
   opacity: 0.8;
 }
 
+/* Styles for Expense Button (Red) */
+button.primary.expense-mode {
+  background: var(--expense-color);
+  box-shadow: 0 4px 12px rgba(255, 68, 68, 0.2);
+}
+
 .water-btn {
   background: #00a8ff;
   color: white;
@@ -258,6 +279,37 @@ button.primary:active {
   box-shadow: 0 0 20px rgba(0, 168, 255, 0.4);
 }
 
+/* Toggle Switch */
+.toggle-container {
+  display: flex;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 4px;
+  margin-bottom: 12px;
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.3s;
+}
+
+.toggle-btn.active.income {
+  background: var(--finance-color);
+  color: #121212;
+}
+
+.toggle-btn.active.expense {
+  background: var(--expense-color);
+  color: white;
+}
+
 #aura-orb-container {
   display: flex;
   flex-direction: column;
@@ -267,6 +319,7 @@ button.primary:active {
 }
 
 #update-btn {
+  display: none;
   position: fixed;
   top: 20px;
   right: 20px;
@@ -278,7 +331,6 @@ button.primary:active {
   z-index: 1000;
   border: none;
   font-size: 12px;
-  display: none;
 }
 
 #update-btn.visible {
