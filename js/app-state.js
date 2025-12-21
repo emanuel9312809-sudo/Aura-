@@ -47,7 +47,8 @@ class AuraState {
             study: {
                 isTimerActive: false,
                 endTime: null,
-                topic: ''
+                topic: '',
+                history: [] // Log de estudos
             }
         };
 
@@ -77,7 +78,11 @@ class AuraState {
                         buckets: { ...this.state.finance.buckets, ...(parsed.finance?.buckets || {}) }
                     },
                     routine: { ...this.state.routine, ...(parsed.routine || {}) },
-                    study: { ...this.state.study, ...(parsed.study || {}) }
+                    study: {
+                        ...this.state.study,
+                        ...(parsed.study || {}),
+                        history: parsed.study?.history || [] // Garantir array
+                    }
                 };
             } catch (e) {
                 console.error('Core: Erro ao carregar estado:', e);
@@ -166,6 +171,14 @@ class AuraState {
 
         // Reward Gigante
         this.addXP(100);
+
+        // Log History
+        if (!this.state.study.history) this.state.study.history = [];
+        this.state.study.history.push({
+            date: new Date().toISOString(),
+            topic: this.state.study.topic,
+            duration: 20
+        });
 
         // Auto-check na lista (se existir)
         if (!this.state.routine.checklist.technical_study) {

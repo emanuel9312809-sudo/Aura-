@@ -125,7 +125,7 @@ class UIRenderer {
             <nav class="nav-bar">
                 <a class="nav-item active" data-tab="aura">
                     <span style="font-size: 1.2rem;">✨</span>
-                    Aura
+                    Rotina
                 </a>
                 <a class="nav-item" data-tab="finance">
                     <span style="font-size: 1.2rem;">💰</span>
