@@ -6,6 +6,8 @@
   --accent-color: #00d4ff;
   --finance-color: #00ff9d;
   --health-color: #ff0055;
+  --mind-color: #bf00ff;
+  /* Cor para ABA Mente */
   --font-family: 'Inter', system-ui, -apple-system, sans-serif;
   --nav-height: 60px;
   --safe-area-inset-bottom: env(safe-area-inset-bottom);
@@ -37,10 +39,9 @@ html {
   position: relative;
   padding-bottom: calc(var(--nav-height) + var(--safe-area-inset-bottom));
   overflow-y: auto;
-  /* Conteúdo scrollável */
 }
 
-/* --- Navigation Bar --- */
+/* Navigation Bar */
 .nav-bar {
   position: fixed;
   bottom: 0;
@@ -51,7 +52,6 @@ html {
   display: flex;
   justify-content: space-around;
   align-items: flex-start;
-  /* Alinhar items ao topo para compensar safe-area */
   padding-top: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   z-index: 100;
@@ -82,13 +82,19 @@ html {
   color: var(--health-color);
 }
 
-/* --- Tabs Content --- */
+.nav-item.active[data-tab="mind"] {
+  color: var(--mind-color);
+}
+
+/* Tabs */
 .tab-content {
   display: none;
   padding: 20px;
   flex-direction: column;
   gap: 20px;
   animation: fadeIn 0.3s ease;
+  min-height: 100%;
+  /* Ensure full height */
 }
 
 .tab-content.active {
@@ -107,7 +113,7 @@ html {
   }
 }
 
-/* --- Components --- */
+/* Card & Typography */
 .card {
   background-color: var(--bg-card);
   border-radius: 12px;
@@ -128,13 +134,27 @@ h2 {
   font-size: 0.9rem;
 }
 
-.stat-value {
-  font-weight: bold;
-  font-family: monospace;
+/* Checklist Styles */
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* Inputs */
-input[type="number"] {
+.checklist-item:last-child {
+  border-bottom: none;
+}
+
+.checklist-item input[type="checkbox"] {
+  transform: scale(1.3);
+  accent-color: var(--accent-color);
+}
+
+/* Inputs & Buttons */
+input[type="number"],
+input[type="text"] {
   width: 100%;
   padding: 12px;
   background: #2a2a2a;
@@ -143,12 +163,6 @@ input[type="number"] {
   color: white;
   font-size: 1rem;
   margin-bottom: 12px;
-}
-
-input[type="range"] {
-  width: 100%;
-  margin: 10px 0;
-  accent-color: var(--finance-color);
 }
 
 button.primary {
@@ -185,17 +199,16 @@ button.primary:active {
   box-shadow: 0 0 20px rgba(0, 168, 255, 0.4);
 }
 
-/* Orb styles (mantendo o existente e melhorando) */
+/* Orb */
 #aura-orb-container {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 300px;
+  min-height: 250px;
 }
 
-/* Botão de Update */
+/* Update Button */
 #update-btn {
   position: fixed;
   top: 20px;
@@ -209,7 +222,6 @@ button.primary:active {
   border: none;
   font-size: 12px;
   display: none;
-  /* Controlado via JS */
 }
 
 #update-btn.visible {
