@@ -1,8 +1,13 @@
 :root {
   --bg-color: #121212;
+  --bg-card: #1e1e1e;
   --text-color: #e0e0e0;
-  --accent-color: #00d4ff; /* Exemplo de cor para o AURA */
+  --text-muted: #a0a0a0;
+  --accent-color: #00d4ff;
+  --finance-color: #00ff9d;
+  --health-color: #ff0055;
   --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  --nav-height: 60px;
   --safe-area-inset-bottom: env(safe-area-inset-bottom);
 }
 
@@ -13,14 +18,15 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-body, html {
+body,
+html {
   width: 100%;
   height: 100%;
   background-color: var(--bg-color);
   color: var(--text-color);
   font-family: var(--font-family);
-  overflow: hidden; /* App-like feel */
-  user-select: none; /* App-like feel */
+  overflow: hidden;
+  user-select: none;
 }
 
 #app {
@@ -29,36 +35,183 @@ body, html {
   display: flex;
   flex-direction: column;
   position: relative;
-  padding-bottom: var(--safe-area-inset-bottom);
+  padding-bottom: calc(var(--nav-height) + var(--safe-area-inset-bottom));
+  overflow-y: auto;
+  /* Conteúdo scrollável */
 }
 
-/* Utilitários para prevenir UI Jumps */
-.full-screen {
-  min-height: 100dvh; /* Dynamic viewport height */
+/* --- Navigation Bar --- */
+.nav-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: calc(var(--nav-height) + var(--safe-area-inset-bottom));
+  background-color: var(--bg-card);
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+  /* Alinhar items ao topo para compensar safe-area */
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 100;
+  backdrop-filter: blur(10px);
+}
+
+.nav-item {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.nav-item.active {
+  color: var(--accent-color);
+}
+
+.nav-item.active[data-tab="finance"] {
+  color: var(--finance-color);
+}
+
+.nav-item.active[data-tab="health"] {
+  color: var(--health-color);
+}
+
+/* --- Tabs Content --- */
+.tab-content {
+  display: none;
+  padding: 20px;
+  flex-direction: column;
+  gap: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+.tab-content.active {
+  display: flex;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- Components --- */
+.card {
+  background-color: var(--bg-card);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+h2 {
+  font-size: 1.2rem;
+  margin-bottom: 12px;
+  color: var(--text-color);
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.stat-value {
+  font-weight: bold;
+  font-family: monospace;
+}
+
+/* Inputs */
+input[type="number"] {
+  width: 100%;
+  padding: 12px;
+  background: #2a2a2a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  margin-bottom: 12px;
+}
+
+input[type="range"] {
+  width: 100%;
+  margin: 10px 0;
+  accent-color: var(--finance-color);
+}
+
+button.primary {
+  width: 100%;
+  padding: 14px;
+  background: var(--accent-color);
+  color: #121212;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+button.primary:active {
+  opacity: 0.8;
+}
+
+/* Health Utils */
+.water-btn {
+  background: #00a8ff;
+  color: white;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: none;
+  font-weight: bold;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  box-shadow: 0 0 20px rgba(0, 168, 255, 0.4);
+}
+
+/* Orb styles (mantendo o existente e melhorando) */
+#aura-orb-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
 }
 
 /* Botão de Update */
 #update-btn {
   position: fixed;
-  bottom: calc(20px + var(--safe-area-inset-bottom));
-  left: 50%;
-  transform: translateX(-50%) translateY(100px);
-  background: var(--accent-color);
+  top: 20px;
+  right: 20px;
+  background: var(--finance-color);
   color: #121212;
-  padding: 12px 24px;
-  border-radius: 50px;
+  padding: 8px 16px;
+  border-radius: 20px;
   font-weight: bold;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   z-index: 1000;
   border: none;
-  font-size: 14px;
-  opacity: 0;
-  pointer-events: none;
+  font-size: 12px;
+  display: none;
+  /* Controlado via JS */
 }
 
 #update-btn.visible {
-  transform: translateX(-50%) translateY(0);
-  opacity: 1;
-  pointer-events: all;
+  display: block;
 }
