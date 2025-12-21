@@ -235,9 +235,15 @@ class AuraState {
         this.saveState();
     }
 
-    // --- Templates Management v1.5.0 ---
-    addTemplate(name, amount) {
-        this.state.finance.templates.push({ id: Date.now(), name, amount: parseFloat(amount) });
+    // --- Templates Management v1.6.5 ---
+    addTemplate(name, amount, day = null, auto = false) {
+        this.state.finance.templates.push({
+            id: Date.now(),
+            name,
+            amount: parseFloat(amount),
+            day: day ? parseInt(day) : null,
+            auto: !!auto
+        });
         this.saveState();
     }
 
