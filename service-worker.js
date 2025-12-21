@@ -1,11 +1,11 @@
-const CACHE_NAME = 'aura-v1.7.7_HotfixButton-cache';
+const CACHE_NAME = 'aura-v1.7.8_UIFix-cache';
 const FILES_TO_CACHE = [
     './',
     './index.html',
     './manifest.json',
-    './css/styles.css?v=1.7.7_HotfixButton',
+    './css/styles.css?v=1.7.8_UIFix',
     './js/app-state.js',
-    './js/ui-render.js?v=1.7.7_HotfixButton'
+    './js/ui-render.js?v=1.7.8_UIFix'
 ];
 
 self.addEventListener('install', (event) => {

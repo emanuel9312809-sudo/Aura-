@@ -504,19 +504,26 @@ class UIRenderer {
             const persBal = buckets.profit + buckets.investment + state.bonusVault.current;
             document.getElementById('personal-balance-display').textContent = `${persBal.toFixed(2)} €`;
 
-            // v1.7.6_StructureFix: Minhas Contas List
+            // v1.7.8_UIFix: Accounts Rendering
             const pacContainer = document.getElementById('accounts-scroll-view');
             if (pacContainer) {
-                if (accounts && accounts.length > 0) {
-                    pacContainer.innerHTML = accounts.map(a => `
+                if (Array.isArray(accounts) && accounts.length > 0) {
+                    console.log(`UI: Rendering ${accounts.length} accounts.`);
+                    pacContainer.innerHTML = accounts.map(a => {
+                        // Safe parse
+                        const bal = typeof a.balance === 'number' ? a.balance : parseFloat(a.balance || 0);
+                        return `
                         <div class="personal-account-card">
                             <div class="pac-name">${a.name}</div>
-                            <div class="pac-balance">${parseFloat(a.balance).toFixed(2)}€</div>
-                        </div>
-                    `).join('');
+                            <div class="pac-balance">${bal.toFixed(2)}€</div>
+                        </div>`;
+                    }).join('');
                 } else {
+                    console.log('UI: No accounts to render.');
                     pacContainer.innerHTML = '<div style="color:var(--text-muted); font-size:0.8rem; padding:10px;">Sem contas. Clique em +</div>';
                 }
+            } else {
+                console.error('UI: Critical structure error - #accounts-scroll-view not found');
             }
 
             document.getElementById('vault-current').textContent = `${state.bonusVault.current.toFixed(0)} €`;
