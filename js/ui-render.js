@@ -199,7 +199,7 @@ class UIRenderer {
                      <div class="glass-card">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                             <h3 style="margin:0;">Minhas Contas</h3>
-                            <button id="btn-quick-add-acc" style="background:var(--finance-color); border:none; color:black; border-radius:50%; width:24px; height:24px; font-weight:bold; cursor:pointer;" title="Adicionar Conta">+</button>
+                            <!-- Botão removido a pedido do utilizador v1.7.10 -->
                         </div>
                         <div class="personal-accounts-scroll" id="accounts-scroll-view">
                             <!-- Filled by JS -->
@@ -429,7 +429,8 @@ class UIRenderer {
         // v1.7.7_HotfixButton: Robust Event Delegation
         // We attach to appElement (or document) to catch clicks even if the button was re-rendered.
         this.appElement.addEventListener('click', (e) => {
-            // Check for Add Account Button (delegation)
+            // Check for Add Account Button (delegation) - REMOVED v1.7.10
+            /*
             if (e.target.id === 'btn-quick-add-acc') {
                 const name = prompt("Nome da conta:");
                 if (name) {
@@ -437,6 +438,7 @@ class UIRenderer {
                     auraState.addAccount(name, bal);
                 }
             }
+            */
         });
     }
 
