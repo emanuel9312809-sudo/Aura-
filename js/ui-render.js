@@ -19,11 +19,8 @@ class UIRenderer {
         this.setupListeners();
 
         auraState.subscribe((state) => {
-            // v1.7.4 Force async render
-            setTimeout(() => {
-                this.updateUI(state);
-                this.handleTimerState(state);
-            }, 50);
+            this.updateUI(state);
+            this.handleTimerState(state);
         });
     }
 
@@ -526,14 +523,26 @@ class UIRenderer {
         }
 
         // --- Standard Updates ---
+        // v1.7.5_fix Transaction Dropdown Logic
         const accSelect = document.getElementById('select-account-transaction');
-        const curAcc = accSelect.value;
-        accSelect.innerHTML = accounts.map(a => `<option value="${a.id}">${a.name} (${a.balance.toFixed(2)}€)</option>`).join('');
-        if (curAcc && accounts.find(a => a.id === curAcc)) accSelect.value = curAcc;
+        // Note: we want to preserve selection if possible, but options might change.
+        // Simplified: Just render.
+        if (accSelect) {
+            const currentVal = accSelect.value;
+            accSelect.innerHTML = accounts.map(a => `<option value="${a.id}">${a.name} (${parseFloat(a.balance).toFixed(2)}€)</option>`).join('');
+            // Restore if valid
+            if (currentVal && accounts.find(a => a.id === currentVal)) {
+                accSelect.value = currentVal;
+            }
+        }
 
-        document.getElementById('accounts-list-settings').innerHTML = accounts.map(a =>
-            `<div class="account-item"><span>${a.name} (${a.balance}€)</span><button class="btn-del-acc" data-id="${a.id}" style="color:red; background:none; border:none;">🗑️</button></div>`
-        ).join('');
+        // Also update the Settings list while we are here
+        const settingsList = document.getElementById('accounts-list-settings');
+        if (settingsList) {
+            settingsList.innerHTML = accounts.map(a =>
+                `<div class="account-item"><span>${a.name} (${parseFloat(a.balance).toFixed(2)}€)</span><button class="btn-del-acc" data-id="${a.id}" style="color:red; background:none; border:none;">🗑️</button></div>`
+            ).join('');
+        }
 
         document.getElementById('templates-list-settings').innerHTML = templates.map(t => `<div class="account-item"><span>${t.name} (${t.amount}€)</span><button class="btn-del-tmpl" data-id="${t.id}" style="color:red; background:none; border:none;">×</button></div>`).join('');
 

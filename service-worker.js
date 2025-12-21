@@ -1,15 +1,15 @@
-const CACHE_NAME = 'aura-v1.7.3-cache';
+const CACHE_NAME = 'aura-v1.7.5_fix-cache';
 const FILES_TO_CACHE = [
     './',
     './index.html',
     './manifest.json',
-    './css/styles.css?v=1.7.2',
+    './css/styles.css?v=1.7.5_fix',
     './js/app-state.js',
-    './js/ui-render.js?v=1.7.2'
+    './js/ui-render.js?v=1.7.5_fix'
 ];
 
 self.addEventListener('install', (event) => {
-    console.log('[Service Worker] A instalar v1.7.3...');
+    console.log('[Service Worker] A instalar v1.7.5_fix...');
     self.skipWaiting();
 
     event.waitUntil(
