@@ -452,6 +452,7 @@ class UIRenderer {
 
     updateUI(state) {
         const { labels, buckets, accounts, templates } = state.finance;
+        console.log('UI: updating. Accounts:', accounts.length);
 
         // --- Business View Widgets ---
         if (document.getElementById('business-balance-display')) {

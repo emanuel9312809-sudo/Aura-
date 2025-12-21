@@ -103,13 +103,19 @@ class AuraState {
                         history: parsed.study?.history || []
                     }
                 };
+                console.log('Core: State Loaded. Accounts:', this.state.finance.accounts);
             } catch (e) {
                 console.error('Core: Erro ao carregar estado:', e);
             }
+        } else {
+            console.log('Core: No saved state found. Using defaults.');
         }
     }
 
     saveState() {
+        // Debug: Log saving action
+        if (this.state.finance.accounts.length === 0) console.warn('Core: WARNING - Saving EMPTY accounts array!');
+
         localStorage.setItem('aura_state_v1', JSON.stringify(this.state));
         this.notify();
     }
