@@ -244,31 +244,7 @@ class UIRenderer {
                         </div>
                      </div>
 
-                    <div class="glass-card" style="text-align:center;">
-                        <h3>Mapa de Energia (Saldo Total)</h3>
-                        <div class="energy-map-container">
-                            <svg class="radar-svg" viewBox="0 0 200 200" id="radar-chart">
-                                <!-- Background Web -->
-                                <circle cx="100" cy="100" r="20" class="radar-web"/>
-                                <circle cx="100" cy="100" r="40" class="radar-web"/>
-                                <circle cx="100" cy="100" r="60" class="radar-web"/>
-                                <circle cx="100" cy="100" r="80" class="radar-web"/>
-                                
-                                <!-- Axes -->
-                                <line x1="100" y1="100" x2="100" y2="20" class="radar-axis"/> <!-- Top -->
-                                <line x1="100" y1="100" x2="169" y2="140" class="radar-axis"/> <!-- BR (30deg) -->
-                                <line x1="100" y1="100" x2="31" y2="140" class="radar-axis"/> <!-- BL (150deg) -->
 
-                                <!-- Labels -->
-                                <text x="100" y="15" class="radar-label">Necessidades</text>
-                                <text x="175" y="150" class="radar-label">Crescimento</text>
-                                <text x="25" y="150" class="radar-label">Alma</text>
-
-                                <!-- Data Polygon -->
-                                <polygon id="radar-poly" points="100,100 100,100 100,100" class="radar-polygon"/>
-                            </svg>
-                        </div>
-                    </div>
 
 
                     
@@ -370,7 +346,7 @@ class UIRenderer {
                 if (target === 'business') {
                     viewBiz.style.display = 'block';
                     viewPers.style.display = 'none';
-                    setTimeout(() => this.updateRadarChart(auraState.state), 50); // Redraw
+
                 } else {
                     viewBiz.style.display = 'none';
                     viewPers.style.display = 'block';
@@ -529,7 +505,7 @@ class UIRenderer {
             if (el.getAttribute('data-tab') === tabName) el.classList.add('active');
         });
         if (tabName === 'finance' && document.getElementById('view-business').style.display !== 'none') {
-            this.updateRadarChart(auraState.state);
+
         }
     }
 
@@ -559,8 +535,8 @@ class UIRenderer {
         if (document.getElementById('business-balance-display')) {
             const bizBal = buckets.operation + buckets.tax;
             document.getElementById('business-balance-display').textContent = `${bizBal.toFixed(2)} €`;
-            // Trigger Radar update
-            this.updateRadarChart(state);
+
+
         }
 
         // ROI Clocks
@@ -642,42 +618,7 @@ class UIRenderer {
         }
     }
 
-    updateRadarChart(state) {
-        const poly = document.getElementById('radar-poly');
-        if (!poly) return;
 
-        const b = state.finance.buckets;
-
-        // 1. Calculate Values
-        const valNeeds = b.operation + b.tax; // Top
-        const valGrow = b.investment;        // Right
-        const valSoul = b.profit + state.bonusVault.current; // Left
-
-        // 2. Normalize (Scale of 0-80px)
-        const maxVal = Math.max(valNeeds, valGrow, valSoul, 100); // 100 min
-        const scale = (v) => (v / maxVal) * 80;
-
-        const rNeeds = scale(valNeeds);
-        const rGrow = scale(valGrow);
-        const rSoul = scale(valSoul);
-
-        // 3. Coordinates (Center 100,100)
-        // Top (-90 deg): x=100, y=100 - r
-        const x1 = 100;
-        const y1 = 100 - rNeeds;
-
-        // BR (30 deg): x=100 + cos(30)*r, y=100 + sin(30)*r
-        const rad30 = 30 * Math.PI / 180;
-        const x2 = 100 + Math.cos(rad30) * rGrow;
-        const y2 = 100 + Math.sin(rad30) * rGrow;
-
-        // BL (150 deg): x=100 + cos(150)*r, y=100 + sin(150)*r
-        const rad150 = 150 * Math.PI / 180;
-        const x3 = 100 + Math.cos(rad150) * rSoul;
-        const y3 = 100 + Math.sin(rad150) * rSoul;
-
-        poly.setAttribute('points', `${x1},${y1} ${x2},${y2} ${x3},${y3}`);
-    }
 
     // v1.9.1: Dynamic Personal Radar Chart (N-gon)
     drawPersonalRadar(data) {
