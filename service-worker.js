@@ -1,13 +1,13 @@
-const CACHE_NAME = 'aura-v1.9.1_cats-cache';
+const CACHE_NAME = 'aura-v1.9.1_hotfix-cache';
 const FILES_TO_CACHE = [
     './',
     './index.html',
     './manifest.json',
     './css/styles.css?v=1.9.0',
     './js/app-state.js?v=1.9.1',
-    './js/ui-render.js?v=1.9.1_cats',
-    './js/ui-settings.js',
-    './js/ui-personal.js'
+    './js/ui-render.js?v=1.9.1_hotfix',
+    './js/ui-settings.js?v=1.9.1',
+    './js/ui-personal.js?v=1.9.1'
 ];
 
 self.addEventListener('install', (event) => {
