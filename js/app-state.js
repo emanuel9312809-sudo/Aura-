@@ -476,6 +476,31 @@ class AuraState {
         this.saveState();
         console.log(`Personal Transaction: ${type} ${amount}€ (${category}) -> ${acc.name}`);
     }
+
+    // v1.9.0: Radar Chart Data
+    getMonthlyPersonalExpenses() {
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        const totals = {
+            'Essencial': 0,
+            'Lazer': 0,
+            'Investimento': 0
+        };
+
+        if (this.state.finance.transactions) {
+            this.state.finance.transactions.forEach(t => {
+                const tDate = new Date(t.date);
+                if (t.type === 'expense' && t.category && tDate.getMonth() === currentMonth && tDate.getFullYear() === currentYear) {
+                    if (totals.hasOwnProperty(t.category)) {
+                        totals[t.category] += t.amount;
+                    }
+                }
+            });
+        }
+        return totals;
+    }
 }
 
 export const auraState = new AuraState();
