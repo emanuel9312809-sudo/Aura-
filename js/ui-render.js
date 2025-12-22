@@ -185,31 +185,7 @@ class UIRenderer {
                 <!-- VIEW: BUSINESS -->
                 <div id="view-business">
                     <!-- Energy Map Radar Chart -->
-                    <div class="glass-card" style="text-align:center;">
-                        <h3>Mapa de Energia (Saldo)</h3>
-                        <div class="energy-map-container">
-                            <svg class="radar-svg" viewBox="0 0 200 200" id="radar-chart">
-                                <!-- Background Web -->
-                                <circle cx="100" cy="100" r="20" class="radar-web"/>
-                                <circle cx="100" cy="100" r="40" class="radar-web"/>
-                                <circle cx="100" cy="100" r="60" class="radar-web"/>
-                                <circle cx="100" cy="100" r="80" class="radar-web"/>
-                                
-                                <!-- Axes -->
-                                <line x1="100" y1="100" x2="100" y2="20" class="radar-axis"/> <!-- Top -->
-                                <line x1="100" y1="100" x2="169" y2="140" class="radar-axis"/> <!-- BR (30deg) -->
-                                <line x1="100" y1="100" x2="31" y2="140" class="radar-axis"/> <!-- BL (150deg) -->
 
-                                <!-- Labels -->
-                                <text x="100" y="15" class="radar-label">Necessidades</text>
-                                <text x="175" y="150" class="radar-label">Crescimento</text>
-                                <text x="25" y="150" class="radar-label">Alma</text>
-
-                                <!-- Data Polygon -->
-                                <polygon id="radar-poly" points="100,100 100,100 100,100" class="radar-polygon"/>
-                            </svg>
-                        </div>
-                    </div>
 
                     <div class="glass-card" style="text-align:center;">
                         <h3>Caixa da Empresa</h3>
@@ -264,6 +240,32 @@ class UIRenderer {
                             <canvas id="personal-radar-canvas" width="220" height="200"></canvas>
                         </div>
                      </div>
+
+                    <div class="glass-card" style="text-align:center;">
+                        <h3>Mapa de Energia (Saldo Total)</h3>
+                        <div class="energy-map-container">
+                            <svg class="radar-svg" viewBox="0 0 200 200" id="radar-chart">
+                                <!-- Background Web -->
+                                <circle cx="100" cy="100" r="20" class="radar-web"/>
+                                <circle cx="100" cy="100" r="40" class="radar-web"/>
+                                <circle cx="100" cy="100" r="60" class="radar-web"/>
+                                <circle cx="100" cy="100" r="80" class="radar-web"/>
+                                
+                                <!-- Axes -->
+                                <line x1="100" y1="100" x2="100" y2="20" class="radar-axis"/> <!-- Top -->
+                                <line x1="100" y1="100" x2="169" y2="140" class="radar-axis"/> <!-- BR (30deg) -->
+                                <line x1="100" y1="100" x2="31" y2="140" class="radar-axis"/> <!-- BL (150deg) -->
+
+                                <!-- Labels -->
+                                <text x="100" y="15" class="radar-label">Necessidades</text>
+                                <text x="175" y="150" class="radar-label">Crescimento</text>
+                                <text x="25" y="150" class="radar-label">Alma</text>
+
+                                <!-- Data Polygon -->
+                                <polygon id="radar-poly" points="100,100 100,100 100,100" class="radar-polygon"/>
+                            </svg>
+                        </div>
+                    </div>
 
                      <div class="glass-card" style="text-align:center;">
                         <h3>Meu Património</h3>
