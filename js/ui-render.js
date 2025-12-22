@@ -78,43 +78,10 @@ class UIRenderer {
                     </div>
 
                     <!-- TAB DISTRIBUIÇÃO v1.6.5 Refactor -->
-                    <div id="tab-dist" class="modal-tab-content active">
+                    <!-- TAB DISTRIBUIÇÃO v1.9.5 Refactor -->
+                    <div id="tab-dist" class="modal-tab-content">
                          <div class="glass-card">
-                            <h3>Percentagens (%)</h3>
-                            
-                            <div class="slider-group">
-                                <div class="slider-header">
-                                    <label><input type="text" class="bucket-label-input" id="edit-lbl-op" value="Operação"></label>
-                                    <span style="font-weight:bold"><span id="perc-op">60</span>%</span>
-                                </div>
-                                <input type="range" id="slider-op" min="0" max="100" value="60">
-                            </div>
-
-                            <div class="slider-group">
-                                <div class="slider-header">
-                                    <label><input type="text" class="bucket-label-input" id="edit-lbl-profit" value="Lucro"></label>
-                                    <span style="font-weight:bold"><span id="perc-profit">20</span>%</span>
-                                </div>
-                                <input type="range" id="slider-profit" min="0" max="100" value="20">
-                            </div>
-
-                            <div class="slider-group">
-                                <div class="slider-header">
-                                    <label><input type="text" class="bucket-label-input" id="edit-lbl-tax" value="Impostos"></label>
-                                    <span style="font-weight:bold"><span id="perc-tax">15</span>%</span>
-                                </div>
-                                <input type="range" id="slider-tax" min="0" max="100" value="15">
-                            </div>
-
-                            <div class="slider-group">
-                                <div class="slider-header">
-                                    <label><input type="text" class="bucket-label-input" id="edit-lbl-invest" value="Investimento"></label>
-                                    <span style="font-weight:bold"><span id="perc-invest">5</span>%</span>
-                                </div>
-                                <input type="range" id="slider-invest" min="0" max="100" value="5">
-                            </div>
-                            
-                            <small>Total: <span id="slider-total">100</span>%</small>
+                            <div id="settings-distribution-container"></div>
                         </div>
                     </div>
 
@@ -321,7 +288,10 @@ class UIRenderer {
         const modal = document.getElementById('settings-modal');
         document.getElementById('btn-open-settings').addEventListener('click', () => {
             modal.classList.add('open');
-            if (uiSettings) uiSettings.renderCategoryManager(document.getElementById('settings-cats-container'));
+            if (uiSettings) {
+                uiSettings.renderCategoryManager(document.getElementById('settings-cats-container'));
+                uiSettings.renderDistributionSettings(document.getElementById('settings-distribution-container'));
+            }
         });
         document.getElementById('btn-close-modal').addEventListener('click', () => modal.classList.remove('open'));
         document.querySelectorAll('.modal-tab').forEach(tab => {
@@ -426,12 +396,7 @@ class UIRenderer {
         });
 
         // SLIDERS
-        const diffs = ['op', 'profit', 'tax', 'invest'];
-        diffs.forEach(k => {
-            const keys = { op: 'operation', profit: 'profit', tax: 'tax', invest: 'investment' };
-            document.getElementById(`edit-lbl-${k}`).addEventListener('change', (e) => auraState.updateBucketLabel(keys[k], e.target.value));
-            document.getElementById(`slider-${k}`).addEventListener('input', () => this.handleConfigChange());
-        });
+        // v1.9.5 Removed Sliders logic (Controlled by renderDistributionSettings)
 
         document.getElementById('btn-water').addEventListener('click', () => auraState.addWater());
         document.getElementById('btn-start-timer').addEventListener('click', () => {
@@ -509,19 +474,7 @@ class UIRenderer {
         }
     }
 
-    handleConfigChange() {
-        const op = parseInt(document.getElementById('slider-op').value) || 0;
-        const profit = parseInt(document.getElementById('slider-profit').value) || 0;
-        const tax = parseInt(document.getElementById('slider-tax').value) || 0;
-        const invest = parseInt(document.getElementById('slider-invest').value) || 0;
-        document.getElementById('perc-op').textContent = op;
-        document.getElementById('perc-profit').textContent = profit;
-        document.getElementById('perc-tax').textContent = tax;
-        document.getElementById('perc-invest').textContent = invest;
-        const total = op + profit + tax + invest;
-        document.getElementById('slider-total').textContent = total;
-        if (total === 100) auraState.updateFinanceConfig({ operation: op, profit: profit, tax: tax, investment: invest });
-    }
+    // Deprecated v1.9.5
 
     handleTimerState(state) {
         // ... (std)
@@ -532,11 +485,21 @@ class UIRenderer {
         console.log('UI: updating. Accounts:', accounts.length);
 
         // --- Business View Widgets ---
+        // --- Business View Widgets ---
         if (document.getElementById('business-balance-display')) {
-            const bizBal = buckets.operation + buckets.tax;
-            document.getElementById('business-balance-display').textContent = `${bizBal.toFixed(2)} €`;
+            // v1.9.5: Sum of all Business Buckets
+            const totalBiz = state.finance.businessBuckets.reduce((sum, b) => sum + (parseFloat(b.balance) || 0), 0);
+            document.getElementById('business-balance-display').textContent = `${totalBiz.toFixed(2)} €`;
+        }
 
-
+        // v1.9.5: Populate Expense Dropdown
+        const expSelect = document.getElementById('select-expense-bucket');
+        if (expSelect) {
+            const currentVal = expSelect.value;
+            expSelect.innerHTML = state.finance.businessBuckets.map(b =>
+                `<option value="${b.id}">${b.name} (${parseFloat(b.balance).toFixed(2)}€)</option>`
+            ).join('');
+            if (currentVal && state.finance.businessBuckets.find(b => b.id === currentVal)) expSelect.value = currentVal;
         }
 
         // ROI Clocks

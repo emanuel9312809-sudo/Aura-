@@ -39,6 +39,13 @@ class AuraState {
                     { id: 'bank_main', name: 'Banco Principal', balance: 0, type: 'bank' },
                     { id: 'cash_wallet', name: 'Carteira (Físico)', balance: 0, type: 'cash' }
                 ],
+                // v1.9.5: Dynamic Business Buckets
+                businessBuckets: [
+                    { id: 'op', name: 'Operação', percent: 60, balance: 0 },
+                    { id: 'profit', name: 'Lucro', percent: 20, balance: 0 },
+                    { id: 'tax', name: 'Impostos', percent: 15, balance: 0 },
+                    { id: 'invest', name: 'Investimento', percent: 5, balance: 0 }
+                ],
                 // v1.9.1: Dynamic Personal Categories
                 personalCategories: [
                     { id: 'cat_essential', name: 'Essencial', color: '#ff4444' }, // Red
@@ -100,9 +107,17 @@ class AuraState {
                         transactions: Array.isArray(parsed.finance?.transactions) ? parsed.finance.transactions : [],
                         // Fix v1.7.0: Explicit check for Array to prevent overwriting with defaults
                         accounts: Array.isArray(parsed.finance?.accounts) ? parsed.finance.accounts : this.defaultState.finance.accounts,
+                        // v1.9.5: Merge businessBuckets
+                        businessBuckets: Array.isArray(parsed.finance?.businessBuckets) ? parsed.finance.businessBuckets : this.defaultState.finance.businessBuckets,
+                        // Legacy support: If loading old state without buckets, rely on default
+                        // If user had buckets (v1.9.5), use them.
                         templates: Array.isArray(parsed.finance?.templates) ? parsed.finance.templates : []
                     },
-                    routine: { ...this.state.routine, ...(parsed.routine || {}) },
+                    health: { ...this.state.health, ...(parsed.health || {}) },
+                    routine: {
+                        ...this.state.routine,
+                        checklist: { ...this.state.routine.checklist, ...(parsed.routine?.checklist || {}) }
+                    },
                     study: {
                         ...this.state.study,
                         ...(parsed.study || {}),
@@ -284,261 +299,277 @@ class AuraState {
         // 2. Deduct from Account (if valid)
         const acc = accounts.find(a => a.id === accountId);
         if (acc) {
-            acc.balance -= amount;
-        } else {
-            console.warn('Conta não encontrada para despesa:', accountId);
-            // Fallback? Não, se não há conta, apenas abate no balde para não bloquear, 
-            // mas o ideal era forçar.
-        }
-
-        // 3. Record Transaction
-        if (!this.state.finance.transactions) this.state.finance.transactions = [];
-        this.state.finance.transactions.unshift({
-            id: Date.now(),
-            date: new Date().toISOString(),
-            type: 'expense',
-            category: category,
-            summary: this.state.finance.labels[category] || category, // store label snapshot
-            amount: amount,
-            accountId: accountId, // Track source
-            split: null
-        });
-        this.saveState();
-    }
-
-    // v1.5.0: Process Income (Bucket Distribution + Account Addition)
-    processIncome(amount, accountId) {
-        amount = parseFloat(amount);
-        if (isNaN(amount) || amount <= 0) return;
-
-        const { config, buckets, accounts } = this.state.finance;
-
-        // 1. Calculate splits
-        const opOps = amount * (config.operation / 100);
-        const opProfit = amount * (config.profit / 100);
-        const opTax = amount * (config.tax / 100);
-        const opInvest = amount * (config.investment / 100);
-
-        // 2. Apply to buckets
-        buckets.operation += opOps;
-        buckets.profit += opProfit;
-        buckets.tax += opTax;
-        buckets.investment += opInvest;
-
-        this.state.finance.profitThisLevel += opProfit;
-
-        // 3. Add to Account
-        const acc = accounts.find(a => a.id === accountId);
-        if (acc) {
-            acc.balance += amount;
-        } else {
-            // Fallback: Add to first account or warn?
-            if (accounts.length > 0) accounts[0].balance += amount;
-        }
-
-        // 4. Record Transaction
-        if (!this.state.finance.transactions) this.state.finance.transactions = [];
-        this.state.finance.transactions.unshift({
-            id: Date.now(),
-            date: new Date().toISOString(),
-            type: 'income',
-            category: null,
-            amount: amount,
-            accountId: accountId, // Track destination
-            split: {
-                operation: opOps,
-                profit: opProfit,
-                tax: opTax,
-                investment: opInvest
-            },
-            configSnapshot: { ...config }
-        });
-
-        if (this.state.finance.transactions.length > 50) this.state.finance.transactions.pop();
-
-        this.addXP(10);
-        this.saveState();
-    }
-
-    // v1.5.0: Delete (Revert both Buckets and Accounts)
-    deleteTransaction(id) {
-        const { finance } = this.state;
-        const index = finance.transactions.findIndex(t => t.id === id);
-        if (index === -1) return;
-
-        const t = finance.transactions[index];
-        const acc = finance.accounts.find(a => a.id === t.accountId);
-
-        if (t.type === 'expense') {
-            // Revert Expense: Add back to Bucket & Account
-            if (finance.buckets.hasOwnProperty(t.category)) {
-                finance.buckets[t.category] += t.amount;
+            // v1.9.5: Deduct from Business Buckets
+            const bIndex = this.state.finance.businessBuckets.findIndex(b => b.id === category);
+            if (bIndex >= 0) {
+                this.state.finance.businessBuckets[bIndex].balance -= amount;
+            } else {
+                // If legacy bucket or invalid ID, warn?
+                // Maybe it was deleted?
+                console.warn('Bucket de negócio não encontrado:', category);
             }
-            if (acc) acc.balance += t.amount;
 
-        } else {
-            // Revert Income: Subtract from Buckets & Account
-            if (t.split) {
-                finance.buckets.operation -= t.split.operation;
-                finance.buckets.profit -= t.split.profit;
-                finance.buckets.tax -= t.split.tax;
-                finance.buckets.investment -= t.split.investment;
-
-                finance.profitThisLevel -= t.split.profit;
-                if (finance.profitThisLevel < 0) finance.profitThisLevel = 0;
-            }
-            if (acc) acc.balance -= t.amount;
-            this.addXP(-10);
+            // 3. Record Transaction
+            if (!this.state.finance.transactions) this.state.finance.transactions = [];
+            this.state.finance.transactions.unshift({
+                id: Date.now(),
+                date: new Date().toISOString(),
+                type: 'expense',
+                category: category,
+                summary: this.getBucketName(category), // helper
+                amount: amount,
+                accountId: accountId, // Track source
+                split: null
+            });
+            this.saveState();
         }
 
-        finance.transactions.splice(index, 1);
-        console.log(`Transação ${id} apagada. Valores revertidos v1.5.0.`);
-        this.saveState();
-    }
+        getBucketName(id) {
+            const b = this.state.finance.businessBuckets.find(x => x.id === id);
+            return b ? b.name : id;
+        }
 
-    updateFinanceConfig(newConfig) {
-        this.state.finance.config = { ...this.state.finance.config, ...newConfig };
-        this.saveState();
-    }
+        // v1.9.5: Process Income (Dynamic Distribution)
+        processIncome(amount, accountId) {
+            amount = parseFloat(amount);
+            if (isNaN(amount) || amount <= 0) return;
 
-    addXP(amount) {
-        this.state.profile.currentXP += amount;
-        // Prevent negative XP (edge case on delete)
-        if (this.state.profile.currentXP < 0) this.state.profile.currentXP = 0;
+            const { businessBuckets, accounts } = this.state.finance;
 
-        this.checkLevelUp();
-        this.saveState();
-    }
+            // 1. Calculate splits & Apply
+            const splitSnapshot = {};
 
-    addWater() {
-        this.state.health.water += 250;
-        this.addXP(5);
-        this.saveState();
-    }
+            businessBuckets.forEach(b => {
+                const val = amount * (b.percent / 100);
+                b.balance += val;
+                splitSnapshot[b.id] = val; // Store for history/revert
 
-    checkLevelUp() {
-        const { profile, finance } = this.state;
-        if (profile.currentXP >= profile.nextLevelXP) {
-            profile.level++;
-            profile.currentXP = profile.currentXP - profile.nextLevelXP;
-            profile.nextLevelXP = Math.floor(profile.nextLevelXP * 1.5);
+                // Track Profit specific for Level logic (Legacy: 'profit' ID)
+                if (b.id === 'profit') this.state.finance.profitThisLevel += val;
+            });
 
-            const bonusAmount = finance.profitThisLevel * 0.05;
-            if (bonusAmount > 0 && finance.buckets.profit >= bonusAmount) {
-                finance.buckets.profit -= bonusAmount;
-                this.state.bonusVault.current += bonusAmount;
-                this.state.bonusVault.history.push({
-                    level: profile.level - 1,
-                    amount: bonusAmount,
-                    date: new Date().toISOString()
+            // 3. Add to Account
+            const acc = accounts.find(a => a.id === accountId);
+            if (acc) {
+                acc.balance += amount;
+            } else {
+                if (accounts.length > 0) accounts[0].balance += amount;
+            }
+
+            // 4. Record Transaction
+            if (!this.state.finance.transactions) this.state.finance.transactions = [];
+            this.state.finance.transactions.unshift({
+                id: Date.now(),
+                date: new Date().toISOString(),
+                type: 'income',
+                category: null,
+                amount: amount,
+                accountId: accountId, // Track destination
+                split: splitSnapshot, // { op: 100, profit: 20 ... }
+                configSnapshot: null // Deprecated
+            });
+
+            if (this.state.finance.transactions.length > 50) this.state.finance.transactions.pop();
+
+            this.addXP(10);
+            this.saveState();
+        }
+
+        // v1.9.5: Delete (Revert Dynamic)
+        deleteTransaction(id) {
+            const { finance } = this.state;
+            const index = finance.transactions.findIndex(t => t.id === id);
+            if (index === -1) return;
+
+            const t = finance.transactions[index];
+            const acc = finance.accounts.find(a => a.id === t.accountId);
+
+            if (t.type === 'expense') {
+                // Revert Expense: Add back to Bucket & Account
+                const b = finance.businessBuckets.find(x => x.id === t.category);
+                if (b) b.balance += t.amount;
+                else {
+                    // Try legacy check if bucket was deleted?
+                    // For now, if bucket gone, money lost from bucket view, but account restored.
+                }
+
+                if (acc) acc.balance += t.amount;
+
+            } else {
+                // Revert Income: Subtract from Buckets & Account
+                if (t.split) {
+                    // t.split is object { id: amount }
+                    Object.entries(t.split).forEach(([bId, val]) => {
+                        const b = finance.businessBuckets.find(x => x.id === bId);
+                        if (b) b.balance -= val;
+                    });
+
+
+                    finance.profitThisLevel -= t.split.profit;
+                    if (finance.profitThisLevel < 0) finance.profitThisLevel = 0;
+                }
+                if (acc) acc.balance -= t.amount;
+                this.addXP(-10);
+            }
+
+            finance.transactions.splice(index, 1);
+            console.log(`Transação ${id} apagada. Valores revertidos v1.9.5.`);
+            this.saveState();
+        }
+
+        // v1.9.5: Update Dynamic Buckets (Replaces updateFinanceConfig)
+        saveBusinessBuckets(newBuckets) {
+            // newBuckets array should be validated before calling (sum=100)
+            this.state.finance.businessBuckets = newBuckets;
+            this.saveState();
+        }
+
+        // Deprecated but kept for compatibility logic if needed
+        updateFinanceConfig(newConfig) {
+            console.warn('updateFinanceConfig is deprecated in v1.9.5. Use saveBusinessBuckets.');
+        }
+
+        addXP(amount) {
+            this.state.profile.currentXP += amount;
+            // Prevent negative XP (edge case on delete)
+            if (this.state.profile.currentXP < 0) this.state.profile.currentXP = 0;
+
+            this.checkLevelUp();
+            this.saveState();
+        }
+
+        addWater() {
+            this.state.health.water += 250;
+            this.addXP(5);
+            this.saveState();
+        }
+
+        checkLevelUp() {
+            const { profile, finance } = this.state;
+            if (profile.currentXP >= profile.nextLevelXP) {
+                profile.level++;
+                profile.currentXP = profile.currentXP - profile.nextLevelXP;
+                profile.nextLevelXP = Math.floor(profile.nextLevelXP * 1.5);
+
+                const bonusAmount = finance.profitThisLevel * 0.05;
+
+                // v1.9.5: Profit logic
+                const profitBucket = finance.businessBuckets.find(b => b.id === 'profit');
+                if (bonusAmount > 0 && profitBucket && profitBucket.balance >= bonusAmount) {
+                    profitBucket.balance -= bonusAmount;
+                    this.state.bonusVault.current += bonusAmount;
+                    this.state.bonusVault.history.push({
+                        level: profile.level - 1,
+                        amount: bonusAmount,
+                        date: new Date().toISOString()
+                    });
+                }
+                finance.profitThisLevel = 0;
+                console.log(`Level Up! Nível ${profile.level}. Bonus: ${bonusAmount.toFixed(2)}€`);
+            }
+        }
+        // --- Visual Analytics Helpers v1.6.0 ---
+        getBusinessBalance() {
+            return this.state.finance.buckets.operation + this.state.finance.buckets.tax;
+        }
+
+        getPersonalBalance() {
+            return this.state.finance.buckets.profit + this.state.finance.buckets.investment + this.state.bonusVault.current;
+        }
+        // --- Personal Finance v1.8.0 ---
+        addPersonalTransaction(type, amount, category, accountId) {
+            amount = parseFloat(amount);
+            if (isNaN(amount) || amount <= 0) return;
+
+            const { accounts } = this.state.finance;
+            const acc = accounts.find(a => a.id === accountId);
+
+            if (!acc) {
+                console.error("Personal Transaction: Account not found", accountId);
+                return;
+            }
+
+            if (type === 'expense') {
+                acc.balance -= amount;
+            } else if (type === 'income') {
+                acc.balance += amount;
+            }
+
+            // Record it
+            if (!this.state.finance.transactions) this.state.finance.transactions = [];
+            this.state.finance.transactions.unshift({
+                id: Date.now(),
+                date: new Date().toISOString(),
+                type: type, // 'expense' or 'income'
+                category: category, // 'Essencial', 'Lazer', 'Investimento' (or null for income)
+                summary: category || 'Rendimento Pessoal',
+                amount: amount,
+                accountId: accountId,
+                split: null, // No business split
+                description: 'Movimento Pessoal'
+            });
+
+            if (this.state.finance.transactions.length > 50) this.state.finance.transactions.pop();
+            this.saveState();
+            console.log(`Personal Transaction: ${type} ${amount}€ (${category}) -> ${acc.name}`);
+        }
+
+        // v1.9.0: Radar Chart Data (Updated v1.9.1 for Dynamic Categories)
+        getMonthlyPersonalExpenses() {
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+
+            // v1.9.1: Initialize totals based on current categories
+            const totals = {};
+            const categories = this.state.finance.personalCategories || [];
+
+            categories.forEach(cat => {
+                totals[cat.name] = 0;
+            });
+
+            if (this.state.finance.transactions) {
+                this.state.finance.transactions.forEach(t => {
+                    const tDate = new Date(t.date);
+                    if (t.type === 'expense' && t.category && tDate.getMonth() === currentMonth && tDate.getFullYear() === currentYear) {
+                        // Normalize check due to legacy data
+                        if (totals.hasOwnProperty(t.category)) {
+                            totals[t.category] += t.amount;
+                        } else {
+                            // Fallback logic could go here, or just ignore outdated categories
+                            // or add to an 'Outros' bucket if we wanted.
+                        }
+                    }
                 });
             }
-            finance.profitThisLevel = 0;
-            console.log(`Level Up! Nível ${profile.level}. Bonus: ${bonusAmount.toFixed(2)}€`);
-        }
-    }
-    // --- Visual Analytics Helpers v1.6.0 ---
-    getBusinessBalance() {
-        return this.state.finance.buckets.operation + this.state.finance.buckets.tax;
-    }
 
-    getPersonalBalance() {
-        return this.state.finance.buckets.profit + this.state.finance.buckets.investment + this.state.bonusVault.current;
-    }
-    // --- Personal Finance v1.8.0 ---
-    addPersonalTransaction(type, amount, category, accountId) {
-        amount = parseFloat(amount);
-        if (isNaN(amount) || amount <= 0) return;
-
-        const { accounts } = this.state.finance;
-        const acc = accounts.find(a => a.id === accountId);
-
-        if (!acc) {
-            console.error("Personal Transaction: Account not found", accountId);
-            return;
+            return totals;
         }
 
-        if (type === 'expense') {
-            acc.balance -= amount;
-        } else if (type === 'income') {
-            acc.balance += amount;
+        // v1.9.1: Category Management
+        addPersonalCategory(name, color) {
+            if (!name) return;
+            if (!this.state.finance.personalCategories) this.state.finance.personalCategories = [];
+
+            const newCat = {
+                id: 'cat_' + Date.now(),
+                name: name,
+                color: color || '#aaaaaa'
+            };
+
+            this.state.finance.personalCategories.push(newCat);
+            this.saveState();
+            console.log(`Category Added: ${name}`);
         }
 
-        // Record it
-        if (!this.state.finance.transactions) this.state.finance.transactions = [];
-        this.state.finance.transactions.unshift({
-            id: Date.now(),
-            date: new Date().toISOString(),
-            type: type, // 'expense' or 'income'
-            category: category, // 'Essencial', 'Lazer', 'Investimento' (or null for income)
-            summary: category || 'Rendimento Pessoal',
-            amount: amount,
-            accountId: accountId,
-            split: null, // No business split
-            description: 'Movimento Pessoal'
-        });
-
-        if (this.state.finance.transactions.length > 50) this.state.finance.transactions.pop();
-        this.saveState();
-        console.log(`Personal Transaction: ${type} ${amount}€ (${category}) -> ${acc.name}`);
-    }
-
-    // v1.9.0: Radar Chart Data (Updated v1.9.1 for Dynamic Categories)
-    getMonthlyPersonalExpenses() {
-        const now = new Date();
-        const currentMonth = now.getMonth();
-        const currentYear = now.getFullYear();
-
-        // v1.9.1: Initialize totals based on current categories
-        const totals = {};
-        const categories = this.state.finance.personalCategories || [];
-
-        categories.forEach(cat => {
-            totals[cat.name] = 0;
-        });
-
-        if (this.state.finance.transactions) {
-            this.state.finance.transactions.forEach(t => {
-                const tDate = new Date(t.date);
-                if (t.type === 'expense' && t.category && tDate.getMonth() === currentMonth && tDate.getFullYear() === currentYear) {
-                    // Normalize check due to legacy data
-                    if (totals.hasOwnProperty(t.category)) {
-                        totals[t.category] += t.amount;
-                    } else {
-                        // Fallback logic could go here, or just ignore outdated categories
-                        // or add to an 'Outros' bucket if we wanted.
-                    }
-                }
-            });
+        removePersonalCategory(id) {
+            if (!this.state.finance.personalCategories) return;
+            this.state.finance.personalCategories = this.state.finance.personalCategories.filter(c => c.id !== id);
+            this.saveState();
+            console.log(`Category Removed: ${id}`);
         }
 
-        return totals;
+        // For later: Edit Name/Color
     }
 
-    // v1.9.1: Category Management
-    addPersonalCategory(name, color) {
-        if (!name) return;
-        if (!this.state.finance.personalCategories) this.state.finance.personalCategories = [];
-
-        const newCat = {
-            id: 'cat_' + Date.now(),
-            name: name,
-            color: color || '#aaaaaa'
-        };
-
-        this.state.finance.personalCategories.push(newCat);
-        this.saveState();
-        console.log(`Category Added: ${name}`);
-    }
-
-    removePersonalCategory(id) {
-        if (!this.state.finance.personalCategories) return;
-        this.state.finance.personalCategories = this.state.finance.personalCategories.filter(c => c.id !== id);
-        this.saveState();
-        console.log(`Category Removed: ${id}`);
-    }
-
-    // For later: Edit Name/Color
-}
-
-export const auraState = new AuraState();
+    export const auraState = new AuraState();
