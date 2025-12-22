@@ -594,177 +594,174 @@ class UIRenderer {
 
 
         // v1.9.0: Update Radar Chart
-        // Corrected access to global auraState
         this.drawPersonalRadar(auraState.getMonthlyPersonalExpenses());
 
-    }
-
-    // --- Standard Updates ---
-    // v1.7.5_fix Transaction Dropdown Logic
-    const accSelect = document.getElementById('select-account-transaction');
-    // Note: we want to preserve selection if possible, but options might change.
-    // Simplified: Just render.
-    if(accSelect) {
-        const currentVal = accSelect.value;
-        accSelect.innerHTML = accounts.map(a => `<option value="${a.id}">${a.name} (${parseFloat(a.balance).toFixed(2)}€)</option>`).join('');
-        // Restore if valid
-        if (currentVal && accounts.find(a => a.id === currentVal)) {
-            accSelect.value = currentVal;
+        // --- Standard Updates ---
+        // v1.7.5_fix Transaction Dropdown Logic
+        const accSelect = document.getElementById('select-account-transaction');
+        // Note: we want to preserve selection if possible, but options might change.
+        // Simplified: Just render.
+        if (accSelect) {
+            const currentVal = accSelect.value;
+            accSelect.innerHTML = accounts.map(a => `<option value="${a.id}">${a.name} (${parseFloat(a.balance).toFixed(2)}€)</option>`).join('');
+            // Restore if valid
+            if (currentVal && accounts.find(a => a.id === currentVal)) {
+                accSelect.value = currentVal;
+            }
         }
-    }
 
-    // Also update the Settings list while we are here
-    const settingsList = document.getElementById('accounts-list-settings');
-    if(settingsList) {
-        settingsList.innerHTML = accounts.map(a =>
-            `<div class="account-item"><span>${a.name} (${parseFloat(a.balance).toFixed(2)}€)</span><button class="btn-del-acc" data-id="${a.id}" style="color:red; background:none; border:none;">🗑️</button></div>`
-        ).join('');
-    }
+        // Also update the Settings list while we are here
+        const settingsList = document.getElementById('accounts-list-settings');
+        if (settingsList) {
+            settingsList.innerHTML = accounts.map(a =>
+                `<div class="account-item"><span>${a.name} (${parseFloat(a.balance).toFixed(2)}€)</span><button class="btn-del-acc" data-id="${a.id}" style="color:red; background:none; border:none;">🗑️</button></div>`
+            ).join('');
+        }
 
         document.getElementById('templates-list-settings').innerHTML = templates.map(t => `<div class="account-item"><span>${t.name} (${t.amount}€)</span><button class="btn-del-tmpl" data-id="${t.id}" style="color:red; background:none; border:none;">×</button></div>`).join('');
 
-    const quickHTML = templates.map(t =>
-        `<button class="tmpl-pill" data-amount="${t.amount}" style="white-space:nowrap; background:rgba(255,255,255,0.1); border:1px solid #444; padding:5px 10px; border-radius:15px; color:#fff; cursor:pointer;">${t.name}</button>`
-    ).join('');
+        const quickHTML = templates.map(t =>
+            `<button class="tmpl-pill" data-amount="${t.amount}" style="white-space:nowrap; background:rgba(255,255,255,0.1); border:1px solid #444; padding:5px 10px; border-radius:15px; color:#fff; cursor:pointer;">${t.name}</button>`
+        ).join('');
         document.getElementById('quick-templates-container').innerHTML = quickHTML;
 
-    // Transaction List... (abbreviated, same as before)
-    const listEl = document.getElementById('transactions-list');
-    const txs = state.finance.transactions || [];
-    if(listEl) {
-        if (txs.length === 0) { listEl.innerHTML = '<div style="opacity:0.5; text-align:center;">Sem movimentos</div>'; }
-        else {
-            listEl.innerHTML = txs.map(t => {
-                const date = new Date(t.date).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', hour: '2-digit' });
-                const isExpense = t.type === 'expense';
-                const sign = isExpense ? '-' : '+';
-                const classColor = isExpense ? 'text-danger' : 'text-success';
-                return `<div class="transaction-item"><div class="transaction-info"><span class="${classColor}" style="font-weight:bold">${sign}${t.amount.toFixed(2)} €</span><span class="transaction-meta">${date} • ${t.category || 'Venda'}</span></div><button class="btn-delete" data-id="${t.id}">🗑️</button></div>`;
-            }).join('');
+        // Transaction List... (abbreviated, same as before)
+        const listEl = document.getElementById('transactions-list');
+        const txs = state.finance.transactions || [];
+        if (listEl) {
+            if (txs.length === 0) { listEl.innerHTML = '<div style="opacity:0.5; text-align:center;">Sem movimentos</div>'; }
+            else {
+                listEl.innerHTML = txs.map(t => {
+                    const date = new Date(t.date).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', hour: '2-digit' });
+                    const isExpense = t.type === 'expense';
+                    const sign = isExpense ? '-' : '+';
+                    const classColor = isExpense ? 'text-danger' : 'text-success';
+                    return `<div class="transaction-item"><div class="transaction-info"><span class="${classColor}" style="font-weight:bold">${sign}${t.amount.toFixed(2)} €</span><span class="transaction-meta">${date} • ${t.category || 'Venda'}</span></div><button class="btn-delete" data-id="${t.id}">🗑️</button></div>`;
+                }).join('');
+            }
         }
     }
-}
 
-updateRadarChart(state) {
-    const poly = document.getElementById('radar-poly');
-    if (!poly) return;
+    updateRadarChart(state) {
+        const poly = document.getElementById('radar-poly');
+        if (!poly) return;
 
-    const b = state.finance.buckets;
+        const b = state.finance.buckets;
 
-    // 1. Calculate Values
-    const valNeeds = b.operation + b.tax; // Top
-    const valGrow = b.investment;        // Right
-    const valSoul = b.profit + state.bonusVault.current; // Left
+        // 1. Calculate Values
+        const valNeeds = b.operation + b.tax; // Top
+        const valGrow = b.investment;        // Right
+        const valSoul = b.profit + state.bonusVault.current; // Left
 
-    // 2. Normalize (Scale of 0-80px)
-    const maxVal = Math.max(valNeeds, valGrow, valSoul, 100); // 100 min
-    const scale = (v) => (v / maxVal) * 80;
+        // 2. Normalize (Scale of 0-80px)
+        const maxVal = Math.max(valNeeds, valGrow, valSoul, 100); // 100 min
+        const scale = (v) => (v / maxVal) * 80;
 
-    const rNeeds = scale(valNeeds);
-    const rGrow = scale(valGrow);
-    const rSoul = scale(valSoul);
+        const rNeeds = scale(valNeeds);
+        const rGrow = scale(valGrow);
+        const rSoul = scale(valSoul);
 
-    // 3. Coordinates (Center 100,100)
-    // Top (-90 deg): x=100, y=100 - r
-    const x1 = 100;
-    const y1 = 100 - rNeeds;
+        // 3. Coordinates (Center 100,100)
+        // Top (-90 deg): x=100, y=100 - r
+        const x1 = 100;
+        const y1 = 100 - rNeeds;
 
-    // BR (30 deg): x=100 + cos(30)*r, y=100 + sin(30)*r
-    const rad30 = 30 * Math.PI / 180;
-    const x2 = 100 + Math.cos(rad30) * rGrow;
-    const y2 = 100 + Math.sin(rad30) * rGrow;
+        // BR (30 deg): x=100 + cos(30)*r, y=100 + sin(30)*r
+        const rad30 = 30 * Math.PI / 180;
+        const x2 = 100 + Math.cos(rad30) * rGrow;
+        const y2 = 100 + Math.sin(rad30) * rGrow;
 
-    // BL (150 deg): x=100 + cos(150)*r, y=100 + sin(150)*r
-    const rad150 = 150 * Math.PI / 180;
-    const x3 = 100 + Math.cos(rad150) * rSoul;
-    const y3 = 100 + Math.sin(rad150) * rSoul;
+        // BL (150 deg): x=100 + cos(150)*r, y=100 + sin(150)*r
+        const rad150 = 150 * Math.PI / 180;
+        const x3 = 100 + Math.cos(rad150) * rSoul;
+        const y3 = 100 + Math.sin(rad150) * rSoul;
 
-    poly.setAttribute('points', `${x1},${y1} ${x2},${y2} ${x3},${y3}`);
-}
+        poly.setAttribute('points', `${x1},${y1} ${x2},${y2} ${x3},${y3}`);
+    }
 
-// v1.9.1: Dynamic Personal Radar Chart (N-gon)
-drawPersonalRadar(data) {
-    const canvas = document.getElementById('personal-radar-canvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const width = canvas.width;
-    const height = canvas.height;
-    const cx = width / 2;
-    const cy = height / 2;
-    const maxRadius = Math.min(width, height) / 2 - 30; // 30px padding for labels
+    // v1.9.1: Dynamic Personal Radar Chart (N-gon)
+    drawPersonalRadar(data) {
+        const canvas = document.getElementById('personal-radar-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        const cx = width / 2;
+        const cy = height / 2;
+        const maxRadius = Math.min(width, height) / 2 - 30; // 30px padding for labels
 
-    ctx.clearRect(0, 0, width, height);
+        ctx.clearRect(0, 0, width, height);
 
-    const categories = Object.keys(data);
-    const numAxes = categories.length;
-    if (numAxes < 3) return; // Need at least 3 for a polygon
+        const categories = Object.keys(data);
+        const numAxes = categories.length;
+        if (numAxes < 3) return; // Need at least 3 for a polygon
 
-    const angleSlice = (Math.PI * 2) / numAxes;
+        const angleSlice = (Math.PI * 2) / numAxes;
 
-    // 1. Draw Web
-    ctx.strokeStyle = '#444';
-    ctx.lineWidth = 1;
+        // 1. Draw Web
+        ctx.strokeStyle = '#444';
+        ctx.lineWidth = 1;
 
-    for (let r = 0.2; r <= 1.0; r += 0.2) {
-        ctx.beginPath();
-        for (let i = 0; i <= numAxes; i++) {
+        for (let r = 0.2; r <= 1.0; r += 0.2) {
+            ctx.beginPath();
+            for (let i = 0; i <= numAxes; i++) {
+                const angle = i * angleSlice - Math.PI / 2;
+                const radius = maxRadius * r;
+                const x = cx + Math.cos(angle) * radius;
+                const y = cy + Math.sin(angle) * radius;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        }
+
+        // 2. Draw Axes & Labels
+        ctx.fillStyle = '#aaa';
+        ctx.font = '10px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        categories.forEach((cat, i) => {
             const angle = i * angleSlice - Math.PI / 2;
-            const radius = maxRadius * r;
-            const x = cx + Math.cos(angle) * radius;
-            const y = cy + Math.sin(angle) * radius;
+            const x = cx + Math.cos(angle) * maxRadius;
+            const y = cy + Math.sin(angle) * maxRadius;
+
+            // Axis line
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+
+            // Label
+            const labelDist = maxRadius + 15;
+            const lx = cx + Math.cos(angle) * labelDist;
+            const ly = cy + Math.sin(angle) * labelDist;
+            ctx.fillText(cat, lx, ly);
+        });
+
+        // 3. Draw Data
+        const values = Object.values(data);
+        const maxData = Math.max(...values, 100); // Scale relative to max or 100 min
+
+        ctx.fillStyle = 'rgba(0, 212, 255, 0.5)';
+        ctx.strokeStyle = '#00d4ff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+
+        categories.forEach((cat, i) => {
+            const val = data[cat];
+            const r = (val / maxData) * maxRadius;
+            const angle = i * angleSlice - Math.PI / 2;
+            const x = cx + Math.cos(angle) * r;
+            const y = cy + Math.sin(angle) * r;
             if (i === 0) ctx.moveTo(x, y);
             else ctx.lineTo(x, y);
-        }
+        });
+
+        ctx.closePath();
+        ctx.fill();
         ctx.stroke();
     }
-
-    // 2. Draw Axes & Labels
-    ctx.fillStyle = '#aaa';
-    ctx.font = '10px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    categories.forEach((cat, i) => {
-        const angle = i * angleSlice - Math.PI / 2;
-        const x = cx + Math.cos(angle) * maxRadius;
-        const y = cy + Math.sin(angle) * maxRadius;
-
-        // Axis line
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.lineTo(x, y);
-        ctx.stroke();
-
-        // Label
-        const labelDist = maxRadius + 15;
-        const lx = cx + Math.cos(angle) * labelDist;
-        const ly = cy + Math.sin(angle) * labelDist;
-        ctx.fillText(cat, lx, ly);
-    });
-
-    // 3. Draw Data
-    const values = Object.values(data);
-    const maxData = Math.max(...values, 100); // Scale relative to max or 100 min
-
-    ctx.fillStyle = 'rgba(0, 212, 255, 0.5)';
-    ctx.strokeStyle = '#00d4ff';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-
-    categories.forEach((cat, i) => {
-        const val = data[cat];
-        const r = (val / maxData) * maxRadius;
-        const angle = i * angleSlice - Math.PI / 2;
-        const x = cx + Math.cos(angle) * r;
-        const y = cy + Math.sin(angle) * r;
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-    });
-
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-}
 }
 
 export const uiRenderer = new UIRenderer();
