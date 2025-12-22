@@ -39,6 +39,12 @@ class AuraState {
                     { id: 'bank_main', name: 'Banco Principal', balance: 0, type: 'bank' },
                     { id: 'cash_wallet', name: 'Carteira (Físico)', balance: 0, type: 'cash' }
                 ],
+                // v1.9.1: Dynamic Personal Categories
+                personalCategories: [
+                    { id: 'cat_essential', name: 'Essencial', color: '#ff4444' }, // Red
+                    { id: 'cat_leisure', name: 'Lazer', color: '#4444ff' },     // Blue
+                    { id: 'cat_invest', name: 'Investimento', color: '#44ff44' } // Green
+                ],
                 templates: []
             },
             health: {
@@ -477,30 +483,62 @@ class AuraState {
         console.log(`Personal Transaction: ${type} ${amount}€ (${category}) -> ${acc.name}`);
     }
 
-    // v1.9.0: Radar Chart Data
+    // v1.9.0: Radar Chart Data (Updated v1.9.1 for Dynamic Categories)
     getMonthlyPersonalExpenses() {
         const now = new Date();
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
 
-        const totals = {
-            'Essencial': 0,
-            'Lazer': 0,
-            'Investimento': 0
-        };
+        // v1.9.1: Initialize totals based on current categories
+        const totals = {};
+        const categories = this.state.finance.personalCategories || [];
+
+        categories.forEach(cat => {
+            totals[cat.name] = 0;
+        });
 
         if (this.state.finance.transactions) {
             this.state.finance.transactions.forEach(t => {
                 const tDate = new Date(t.date);
                 if (t.type === 'expense' && t.category && tDate.getMonth() === currentMonth && tDate.getFullYear() === currentYear) {
+                    // Normalize check due to legacy data
                     if (totals.hasOwnProperty(t.category)) {
                         totals[t.category] += t.amount;
+                    } else {
+                        // Fallback logic could go here, or just ignore outdated categories
+                        // or add to an 'Outros' bucket if we wanted.
                     }
                 }
             });
         }
+
         return totals;
     }
+
+    // v1.9.1: Category Management
+    addPersonalCategory(name, color) {
+        if (!name) return;
+        if (!this.state.finance.personalCategories) this.state.finance.personalCategories = [];
+
+        const newCat = {
+            id: 'cat_' + Date.now(),
+            name: name,
+            color: color || '#aaaaaa'
+        };
+
+        this.state.finance.personalCategories.push(newCat);
+        this.saveState();
+        console.log(`Category Added: ${name}`);
+    }
+
+    removePersonalCategory(id) {
+        if (!this.state.finance.personalCategories) return;
+        this.state.finance.personalCategories = this.state.finance.personalCategories.filter(c => c.id !== id);
+        this.saveState();
+        console.log(`Category Removed: ${id}`);
+    }
+
+    // For later: Edit Name/Color
 }
 
 export const auraState = new AuraState();
