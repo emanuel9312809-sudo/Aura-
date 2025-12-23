@@ -35,12 +35,25 @@ export const uiSettings = {
                     row.style.alignItems = 'center';
 
                     row.innerHTML = `
-                        <div style="display:flex; align-items:center; gap:10px;">
                             <div style="width:20px; height:20px; border-radius:50%; background-color:${cat.color}; border:1px solid rgba(255,255,255,0.3);"></div>
                             <span style="font-size:1rem;">${cat.name}</span>
                         </div>
-                        <button class="btn-del-cat" data-id="${cat.id}" style="background:none; border:none; color:#ff4444; cursor:pointer; font-size:1.2rem;">×</button>
+                        <div style="display:flex; gap:10px;">
+                            <button class="btn-edit-cat" data-id="${cat.id}" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:1.1rem;">✏️</button>
+                            <button class="btn-del-cat" data-id="${cat.id}" style="background:none; border:none; color:#ff4444; cursor:pointer; font-size:1.2rem;">×</button>
+                        </div>
                     `;
+
+                    // v2.5: Edit Logic
+                    row.querySelector('.btn-edit-cat').onclick = () => {
+                        const newName = prompt('Editar nome da categoria:', cat.name);
+                        // Ideally color too, but keep simple
+                        if (newName) {
+                            auraState.updatePersonalCategory(cat.id, newName, null);
+                            renderList();
+                            this.renderSubcategoryManager(document.getElementById('subcat-manager-container'));
+                        }
+                    };
 
                     row.querySelector('.btn-del-cat').onclick = () => {
                         if (confirm(`Apagar "${cat.name}"?`)) {
@@ -147,7 +160,10 @@ export const uiSettings = {
                 listDiv.innerHTML = cat.subcategories.map(s => `
                     <div class="glass-card" style="padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
                         <span>${s}</span>
-                        <button class="btn-del-sub-ded" data-cat="${catId}" data-sub="${s}" style="color:#ff4444; background:none; border:none; cursor:pointer;">🗑️</button>
+                        <div style="display:flex; gap:10px;">
+                            <button class="btn-edit-sub-ded" data-cat="${catId}" data-sub="${s}" style="color:#aaa; background:none; border:none; cursor:pointer;">✏️</button>
+                            <button class="btn-del-sub-ded" data-cat="${catId}" data-sub="${s}" style="color:#ff4444; background:none; border:none; cursor:pointer;">🗑️</button>
+                        </div>
                     </div>
                 `).join('');
             } else {
@@ -178,6 +194,18 @@ export const uiSettings = {
                 btn.onclick = () => {
                     if (confirm('Remover subcategoria?')) {
                         auraState.removeSubcategory(btn.dataset.cat, btn.dataset.sub);
+                        this.renderSubcategoryManager(container);
+                    }
+                };
+            });
+
+            // v2.5: Edit Sub
+            listDiv.querySelectorAll('.btn-edit-sub-ded').forEach(btn => {
+                btn.onclick = () => {
+                    const oldName = btn.dataset.sub;
+                    const newName = prompt('Editar subcategoria:', oldName);
+                    if (newName && newName !== oldName) {
+                        auraState.updateSubcategory(btn.dataset.cat, oldName, newName);
                         this.renderSubcategoryManager(container);
                     }
                 };

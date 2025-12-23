@@ -322,6 +322,46 @@ class UIRenderer {
             }
         });
         document.getElementById('btn-close-modal').addEventListener('click', () => modal.classList.remove('open'));
+
+        // v2.5: Event Delegation for Settings Modal (Fixes broken listeners)
+        modal.addEventListener('click', (e) => {
+            // Delete Account
+            if (e.target.matches('.btn-del-acc') || e.target.closest('.btn-del-acc')) {
+                const btn = e.target.closest('.btn-del-acc');
+                if (confirm('Apagar conta?')) auraState.deleteAccount(btn.dataset.id);
+            }
+            // Edit Account
+            if (e.target.matches('.btn-edit-acc') || e.target.closest('.btn-edit-acc')) {
+                const btn = e.target.closest('.btn-edit-acc');
+                const id = btn.dataset.id;
+                const acc = auraState.state.finance.accounts.find(a => a.id === id);
+                if (acc) {
+                    const newName = prompt('Novo nome da conta:', acc.name);
+                    if (newName) {
+                        auraState.updateAccount(id, { name: newName });
+                    }
+                }
+            }
+            // Delete Template
+            if (e.target.matches('.btn-del-tmpl') || e.target.closest('.btn-del-tmpl')) {
+                const btn = e.target.closest('.btn-del-tmpl');
+                if (confirm('Apagar template?')) auraState.deleteTemplate(parseInt(btn.dataset.id));
+            }
+            // Edit Template
+            if (e.target.matches('.btn-edit-tmpl') || e.target.closest('.btn-edit-tmpl')) {
+                const btn = e.target.closest('.btn-edit-tmpl');
+                const id = parseInt(btn.dataset.id);
+                const tmpl = auraState.state.finance.templates.find(t => t.id === id);
+                if (tmpl) {
+                    const newName = prompt('Nome:', tmpl.name);
+                    const newAmt = prompt('Valor:', tmpl.amount);
+                    if (newName && newAmt) {
+                        auraState.updateTemplate(id, { name: newName, amount: parseFloat(newAmt) });
+                    }
+                }
+            }
+        });
+
         document.querySelectorAll('.modal-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
                 document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
@@ -620,11 +660,25 @@ class UIRenderer {
         const settingsList = document.getElementById('accounts-list-settings');
         if (settingsList) {
             settingsList.innerHTML = accounts.map(a =>
-                `<div class="account-item"><span>${a.name} (${parseFloat(a.balance).toFixed(2)}€)</span><button class="btn-del-acc" data-id="${a.id}" style="color:red; background:none; border:none;">🗑️</button></div>`
+                `<div class="account-item" style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>${a.name} (${parseFloat(a.balance).toFixed(2)}€)</span>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn-edit-acc" data-id="${a.id}" style="color:#aaa; background:none; border:none; cursor:pointer;">✏️</button>
+                        <button class="btn-del-acc" data-id="${a.id}" style="color:red; background:none; border:none; cursor:pointer;">🗑️</button>
+                    </div>
+                </div>`
             ).join('');
         }
 
-        document.getElementById('templates-list-settings').innerHTML = templates.map(t => `<div class="account-item"><span>${t.name} (${t.amount}€)</span><button class="btn-del-tmpl" data-id="${t.id}" style="color:red; background:none; border:none;">×</button></div>`).join('');
+        document.getElementById('templates-list-settings').innerHTML = templates.map(t => `
+            <div class="account-item" style="display:flex; justify-content:space-between; align-items:center;">
+                <span>${t.name} (${t.amount}€)</span>
+                <div style="display:flex; gap:10px;">
+                     <button class="btn-edit-tmpl" data-id="${t.id}" style="color:#aaa; background:none; border:none; cursor:pointer;">✏️</button>
+                     <button class="btn-del-tmpl" data-id="${t.id}" style="color:red; background:none; border:none; cursor:pointer;">🗑️</button>
+                </div>
+            </div>
+        `).join('');
 
         const quickHTML = templates.map(t =>
             `<button class="tmpl-pill" data-amount="${t.amount}" style="white-space:nowrap; background:rgba(255,255,255,0.1); border:1px solid #444; padding:5px 10px; border-radius:15px; color:#fff; cursor:pointer;">${t.name}</button>`

@@ -282,6 +282,15 @@ class AuraState {
         this.saveState();
     }
 
+    // v2.5: Update Template
+    updateTemplate(id, updates) {
+        const t = this.state.finance.templates.find(t => t.id === id);
+        if (t) {
+            Object.assign(t, updates);
+            this.saveState();
+        }
+    }
+
     // --- Core Logic (Finance & XP) v1.5.0 ---
 
     // v1.5.0: Process Expense (Direct Bucket Deduction + Account Deduction)
@@ -586,6 +595,18 @@ class AuraState {
         }
     }
 
+    // v2.5: Update Subcategory
+    updateSubcategory(catInd, oldName, newName) {
+        const cat = this.state.finance.personalCategories.find(c => c.id === catInd);
+        if (cat && cat.subcategories) {
+            const index = cat.subcategories.indexOf(oldName);
+            if (index !== -1) {
+                cat.subcategories[index] = newName;
+                this.saveState();
+            }
+        }
+    }
+
     removeSubcategory(catInd, subName) {
         const cat = this.state.finance.personalCategories.find(c => c.id === catInd);
         if (cat && cat.subcategories) {
@@ -597,8 +618,19 @@ class AuraState {
     removePersonalCategory(id) {
         if (!this.state.finance.personalCategories) return;
         this.state.finance.personalCategories = this.state.finance.personalCategories.filter(c => c.id !== id);
+        this.state.finance.personalCategories = this.state.finance.personalCategories.filter(c => c.id !== id);
         this.saveState();
         console.log(`Category Removed: ${id}`);
+    }
+
+    // v2.5: Update Personal Category
+    updatePersonalCategory(id, name, color) {
+        const cat = this.state.finance.personalCategories.find(c => c.id === id);
+        if (cat) {
+            if (name) cat.name = name;
+            if (color) cat.color = color;
+            this.saveState();
+        }
     }
 
     // For later: Edit Name/Color
