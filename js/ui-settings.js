@@ -85,15 +85,15 @@ export const uiSettings = {
     },
 
     refreshList(container) {
-        // Deprecated internal method, logic moved to renderCategoryManager closure
+        // Deprecated internal method
         console.warn('refreshList is deprecated');
     },
+
     // v1.9.5: Dynamic Business Distribution Settings
     renderDistributionSettings(container) {
         if (!container) return;
 
         // Clone current state deep enough to edit without autosaving until "Save"
-        // Actually, we can edit a local copy and then call saveBusinessBuckets.
         let localBuckets = JSON.parse(JSON.stringify(auraState.state.finance.businessBuckets));
 
         const render = () => {
@@ -167,7 +167,7 @@ export const uiSettings = {
                         localBuckets.splice(index, 1);
                         render();
                     }
-                }
+                };
             });
 
             // Footer: Add & Total & Save
@@ -214,21 +214,16 @@ export const uiSettings = {
         };
 
         const updateTotal = () => {
-            // Re-render whole thing is expensive (lose focus). 
-            // Ideally just update Total text and Save button state.
             const total = localBuckets.reduce((sum, b) => sum + (parseFloat(b.percent) || 0), 0);
             const isValid = Math.abs(total - 100) < 0.1;
 
-            // Update Footer text directly?
-            // Simplest: Just re-render footer? Or targeted update.
-            // Targeted update to avoid losing focus on inputs.
-            const totalEl = container.querySelector('strong'); // hacky but likely works given structure
+            const totalEl = container.querySelector('strong');
             if (totalEl) {
                 totalEl.innerHTML = `${total.toFixed(1)}%`;
                 totalEl.style.color = isValid ? '#00e676' : '#ff4444';
             }
-            const saveBtn = container.lastChild.lastChild; // Button is last in footer
-            if (saveBtn && saveBtn.tagName === 'BUTTON') saveBtn.disabled = !isValid;
+            const saveBtn = container.querySelector('div:last-child button.primary');
+            if (saveBtn) saveBtn.disabled = !isValid;
         };
 
         render();
