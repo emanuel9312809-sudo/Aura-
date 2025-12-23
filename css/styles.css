@@ -24,21 +24,26 @@ body,
 html {
   width: 100%;
   height: 100%;
+  min-height: 100vh;
   background-color: var(--bg-color);
   color: var(--text-color);
   font-family: var(--font-family);
-  overflow: hidden;
+  overflow-y: auto !important;
+  /* v1.9.7: Allow scrolling */
   user-select: none;
 }
 
 #app {
   width: 100%;
-  height: 100%;
+  /* height: 100%; Removed fixed height to allow expansion */
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   position: relative;
-  padding-bottom: calc(var(--nav-height) + var(--safe-area-inset-bottom));
-  overflow-y: auto;
+  /* v1.9.7: Critical Padding for Bottom Nav & Header */
+  padding-bottom: 120px;
+  padding-top: env(safe-area-inset-top);
+  overflow: visible !important;
 }
 
 /* Glassmorphism */

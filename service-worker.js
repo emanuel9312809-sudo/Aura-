@@ -1,9 +1,9 @@
-const CACHE_NAME = 'aura-v1.9.6-cache';
+const CACHE_NAME = 'aura-v1.9.7-mobile-fix';
 const FILES_TO_CACHE = [
     './',
     './index.html',
     './manifest.json',
-    './css/styles.css?v=1.9.0',
+    './css/styles.css?v=1.9.7',
     './js/app-state.js?v=1.9.5',
     './js/ui-render.js?v=1.9.6',
     './js/ui-settings.js?v=1.9.6',
