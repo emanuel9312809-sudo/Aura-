@@ -185,7 +185,9 @@ class UIRenderer {
 
                     <div class="glass-card" style="text-align:center;">
                         <h3>Caixa da Empresa</h3>
-                         <div style="font-size: 2rem; font-weight: bold; color: var(--accent-color);" id="business-balance-display">0.00 €</div>
+                        <div style="font-size: 2rem; font-weight: bold; color: var(--accent-color);" id="business-balance-display">0.00 €</div>
+                        <!-- v2.6: Breakdown List -->
+                        <div id="business-breakdown-container" style="margin-top:15px; display:flex; flex-direction:column; gap:8px;"></div>
                     </div>
 
                     <div class="glass-card">
@@ -584,6 +586,17 @@ class UIRenderer {
             // v1.9.5: Sum of all Business Buckets
             const totalBiz = state.finance.businessBuckets.reduce((sum, b) => sum + (parseFloat(b.balance) || 0), 0);
             document.getElementById('business-balance-display').textContent = `${totalBiz.toFixed(2)} €`;
+
+            // v2.6: Render Breakdown
+            const breakdownContainer = document.getElementById('business-breakdown-container');
+            if (breakdownContainer) {
+                breakdownContainer.innerHTML = state.finance.businessBuckets.map(b => `
+                    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:8px; font-size:0.9rem;">
+                        <span style="color:#aaa;">${b.name}</span>
+                        <span style="font-weight:bold;">${parseFloat(b.balance).toFixed(2)} €</span>
+                    </div>
+                `).join('');
+            }
         }
 
         // v1.9.5: Populate Expense Dropdown

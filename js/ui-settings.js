@@ -176,8 +176,8 @@ export const uiSettings = {
             formDiv.style.display = 'flex';
             formDiv.style.gap = '10px';
             formDiv.innerHTML = `
-                <input type="text" id="new-sub-name" placeholder="Nova subcategoria..." style="flex:1;">
-                <button class="primary" id="btn-add-sub-ded">+</button>
+                <input type="text" id="new-sub-name" placeholder="Nova subcategoria..." style="flex:1; padding:10px; border-radius:8px; border:1px solid #444; background:#222; color:white;">
+                <button class="primary" id="btn-add-sub-ded" style="padding:0 20px; font-size:1.2rem;">+</button>
             `;
             contentArea.appendChild(formDiv);
 
