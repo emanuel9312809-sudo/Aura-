@@ -31,23 +31,96 @@ export const uiSettings = {
                     row.style.margin = '0';
                     row.style.padding = '10px 15px';
                     row.style.display = 'flex';
-                    row.style.justifyContent = 'space-between';
-                    row.style.alignItems = 'center';
+                    row.style.flexDirection = 'column'; // v2.4: Allow expansion
 
-                    row.innerHTML = `
-                        <div style="display:flex; align-items:center; gap:10px;">
+                    // Main Row
+                    const topRow = document.createElement('div');
+                    topRow.style.display = 'flex';
+                    topRow.style.justifyContent = 'space-between';
+                    topRow.style.alignItems = 'center';
+                    topRow.style.width = '100%';
+
+                    topRow.innerHTML = `
+                        <div style="display:flex; align-items:center; gap:10px; cursor:pointer;" id="toggle-${cat.id}">
                             <div style="width:20px; height:20px; border-radius:50%; background-color:${cat.color}; border:1px solid rgba(255,255,255,0.3);"></div>
                             <span style="font-size:1rem;">${cat.name}</span>
+                            <span style="font-size:0.7rem; color:#aaa;">(${cat.subcategories ? cat.subcategories.length : 0} subs)</span>
                         </div>
                         <button class="btn-del-cat" data-id="${cat.id}" style="background:none; border:none; color:#ff4444; cursor:pointer; font-size:1.2rem;">×</button>
                     `;
+                    row.appendChild(topRow);
 
-                    row.querySelector('.btn-del-cat').onclick = () => {
+                    // Subcategories Area (Hidden by default)
+                    const subArea = document.createElement('div');
+                    subArea.style.display = 'none';
+                    subArea.style.marginTop = '10px';
+                    subArea.style.paddingTop = '10px';
+                    subArea.style.borderTop = '1px solid rgba(255,255,255,0.1)';
+                    subArea.style.fontSize = '0.9rem';
+
+                    // List Subs
+                    const subsList = document.createElement('div');
+                    const subs = cat.subcategories || [];
+                    if (subs.length > 0) {
+                        subsList.innerHTML = subs.map(s =>
+                            `<div style="display:flex; justify-content:space-between; margin-bottom:5px; padding-left:10px;">
+                                <span>- ${s}</span>
+                                <button class="btn-del-sub" data-cat="${cat.id}" data-sub="${s}" style="color:#ffcc00; background:none; border:none; cursor:pointer;">×</button>
+                            </div>`
+                        ).join('');
+                    } else {
+                        subsList.innerHTML = '<div style="opacity:0.5; padding-left:10px;">Sem subcategorias</div>';
+                    }
+                    subArea.appendChild(subsList);
+
+                    // Add Sub Form
+                    const addSubDiv = document.createElement('div');
+                    addSubDiv.style.marginTop = '5px';
+                    addSubDiv.style.display = 'flex';
+                    addSubDiv.style.gap = '5px';
+                    addSubDiv.innerHTML = `
+                        <input type="text" placeholder="Nova Subcategoria" style="flex:1; padding:5px; border-radius:4px; border:none;">
+                        <button class="primary btn-add-sub" data-cat="${cat.id}" style="padding:5px 10px;">+</button>
+                    `;
+                    subArea.appendChild(addSubDiv);
+
+                    row.appendChild(subArea);
+
+                    // Logic
+                    topRow.querySelector(`#toggle-${cat.id}`).onclick = () => {
+                        subArea.style.display = subArea.style.display === 'none' ? 'block' : 'none';
+                    };
+
+                    topRow.querySelector('.btn-del-cat').onclick = (e) => {
+                        e.stopPropagation();
                         if (confirm(`Apagar "${cat.name}"?`)) {
                             auraState.removePersonalCategory(cat.id);
                             renderList();
                         }
                     };
+
+                    // Add Sub Logic
+                    addSubDiv.querySelector('.btn-add-sub').onclick = (e) => {
+                        const val = addSubDiv.querySelector('input').value.trim();
+                        if (val) {
+                            auraState.addSubcategory(cat.id, val);
+                            renderList();
+                            // TODO: Maybe keep expanded? 
+                            // state update triggers re-render, so expansion resets unless handled.
+                            // For MVP v2.4, user re-clicks.
+                        }
+                    };
+
+                    // Del Sub Logic
+                    subsList.querySelectorAll('.btn-del-sub').forEach(btn => {
+                        btn.onclick = () => {
+                            if (confirm(`Remover subcategoria?`)) {
+                                auraState.removeSubcategory(btn.dataset.cat, btn.dataset.sub);
+                                renderList();
+                            }
+                        };
+                    });
+
                     listContainer.appendChild(row);
                 });
             }

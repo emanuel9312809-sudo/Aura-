@@ -113,8 +113,11 @@ export const uiPersonal = {
                     <div style="display:flex; align-items:center; gap:10px;">
                         <div style="width:10px; height:10px; border-radius:50%; background:${catColor};"></div>
                         <div style="display:flex; flex-direction:column;">
-                             <span style="font-size:0.9rem; font-weight:bold;">${t.category || (isExpense ? 'Despesa' : 'Rendimento')}</span>
-                             <span style="font-size:0.75rem; color:#aaa;">${dateStr}</span>
+                             <span style="font-size:0.9rem; font-weight:bold;">${t.title || (isExpense ? 'Despesa' : 'Rendimento')}</span>
+                             <span style="font-size:0.75rem; color:#aaa;">
+                                ${t.category ? t.category : ''}
+                                ${t.subcategory ? ` > ${t.subcategory}` : ''}
+                             </span>
                         </div>
                     </div>
                     <div style="display:flex; align-items:center; gap:10px;">

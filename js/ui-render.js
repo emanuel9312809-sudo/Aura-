@@ -45,13 +45,15 @@ class UIRenderer {
                     </div>
                     <div style="margin-top:20px;">
                         <input type="number" id="p-trans-amount" placeholder="Valor (€)" step="0.01" style="width:100%; padding:10px; margin-bottom:15px; border-radius:8px; border:1px solid #333; background:#222; color:white;">
+                        <input type="text" id="p-trans-title" placeholder="Título / Descrição (Obrigatório)" style="width:100%; padding:10px; margin-bottom:15px; border-radius:8px; border:1px solid #333; background:#222; color:white;">
                         
                         <div id="p-trans-cat-container" style="margin-bottom:15px;">
                              <label style="color:#aaa; font-size:0.8rem;">Categoria</label>
-                             <select id="p-trans-category" style="width:100%; padding:10px; border-radius:8px; border:1px solid #333; background:#222; color:white;">
+                             <select id="p-trans-category" style="width:100%; padding:10px; border-radius:8px; border:1px solid #333; background:#222; color:white; margin-bottom:10px;">
                                 <option value="Essencial">Essencial</option>
-                                <option value="Lazer">Lazer</option>
-                                <option value="Investimento">Investimento</option>
+                             </select>
+                             <select id="p-trans-subcategory" style="width:100%; padding:10px; border-radius:8px; border:1px solid #333; background:#222; color:white;">
+                                <option value="">Sem Subcategoria</option>
                              </select>
                         </div>
 
@@ -431,18 +433,22 @@ class UIRenderer {
         });
 
         // --- Personal Quick Actions v1.8.0 ---
+        // --- Personal Quick Actions v1.8.0 ---
         const transModal = document.getElementById('transaction-modal');
         const pTransAmount = document.getElementById('p-trans-amount');
+        const pTransTitle = document.getElementById('p-trans-title'); // v2.4
         const pTransCat = document.getElementById('p-trans-category');
+        const pTransSub = document.getElementById('p-trans-subcategory'); // v2.4
         const pTransAcc = document.getElementById('p-trans-account');
         const pTransCatContainer = document.getElementById('p-trans-cat-container');
-        const pTransTitle = document.getElementById('trans-modal-title');
+        const pTransModalTitle = document.getElementById('trans-modal-title');
         let currentPTransType = 'expense';
 
         const openPTransModal = (type) => {
             currentPTransType = type;
             transModal.classList.add('open');
             pTransAmount.value = '';
+            pTransTitle.value = ''; // v2.4: Reset Title
 
             // Populate Accounts
             const accounts = auraState.state.finance.accounts;
@@ -452,22 +458,42 @@ class UIRenderer {
             const cats = auraState.state.finance.personalCategories || [];
             if (cats.length > 0) {
                 pTransCat.innerHTML = cats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+                // Trigger Subcategory update for first item
+                updateSubcategories(cats[0].name);
             } else {
                 pTransCat.innerHTML = '<option value="Outros">Outros</option>';
+                pTransSub.innerHTML = '<option value="">Sem Subcategorias</option>';
             }
 
             if (type === 'expense') {
-                pTransTitle.textContent = 'Registar Despesa';
-                pTransTitle.style.color = '#ff4444';
+                pTransModalTitle.textContent = 'Registar Despesa';
+                pTransModalTitle.style.color = '#ff4444';
                 pTransCatContainer.style.display = 'block';
                 document.getElementById('p-trans-acc-label').textContent = 'Conta de Origem';
             } else {
-                pTransTitle.textContent = 'Registar Rendimento';
-                pTransTitle.style.color = 'var(--success-color, #00C853)';
+                pTransModalTitle.textContent = 'Registar Rendimento';
+                pTransModalTitle.style.color = 'var(--success-color, #00C853)';
                 pTransCatContainer.style.display = 'none'; // No category for simple income
                 document.getElementById('p-trans-acc-label').textContent = 'Conta de Destino';
             }
         };
+
+        // v2.4: Helper to update Subcategories
+        const updateSubcategories = (catName) => {
+            const cat = (auraState.state.finance.personalCategories || []).find(c => c.name === catName);
+            pTransSub.innerHTML = '<option value="">Sem Subcategoria</option>';
+
+            if (cat && cat.subcategories && cat.subcategories.length > 0) {
+                pTransSub.innerHTML = cat.subcategories.map(s => `<option value="${s}">${s}</option>`).join('');
+            }
+        };
+
+        // v2.4: Listen for Category Change
+        if (pTransCat) {
+            pTransCat.addEventListener('change', (e) => {
+                updateSubcategories(e.target.value);
+            });
+        }
 
         document.getElementById('btn-personal-expense').addEventListener('click', () => openPTransModal('expense'));
         document.getElementById('btn-personal-income').addEventListener('click', () => openPTransModal('income'));
@@ -475,14 +501,16 @@ class UIRenderer {
 
         document.getElementById('btn-confirm-p-trans').addEventListener('click', () => {
             const amt = pTransAmount.value;
+            const title = pTransTitle.value.trim(); // v2.4
             const accId = pTransAcc.value;
             const cat = currentPTransType === 'expense' ? pTransCat.value : null;
+            const sub = currentPTransType === 'expense' ? pTransSub.value : null; // v2.4
 
-            if (amt && accId) {
-                auraState.addPersonalTransaction(currentPTransType, amt, cat, accId);
+            if (amt && accId && title) {
+                auraState.addPersonalTransaction(currentPTransType, amt, cat, accId, title, sub);
                 transModal.classList.remove('open');
             } else {
-                alert('Preencha o valor e selecione uma conta.');
+                alert('Preencha o valor, título e selecione uma conta.');
             }
         });
     }
@@ -743,8 +771,12 @@ class UIRenderer {
                    <div style="display:flex; align-items:center; gap:12px;">
                         <div style="width:12px; height:12px; border-radius:50%; background:${catColor};"></div>
                         <div style="display:flex; flex-direction:column;">
-                             <span style="font-weight:bold; font-size:1rem;">${t.category || (isExpense ? 'Despesa' : 'Rendimento')}</span>
-                             <span style="font-size:0.8rem; color:#aaa;">${t.summary || ''} • ${dateStr}</span>
+                             <span style="font-weight:bold; font-size:1rem;">${t.title || t.summary || (isExpense ? 'Despesa' : 'Rendimento')}</span>
+                             <span style="font-size:0.8rem; color:#aaa;">
+                                ${dateStr}
+                                ${t.category ? ` • ${t.category}` : ''}
+                                ${t.subcategory ? ` > ${t.subcategory}` : ''}
+                             </span>
                         </div>
                    </div>
                    <div style="display:flex; align-items:center; gap:15px;">
