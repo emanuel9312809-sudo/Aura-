@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aura-v1.9.7-mobile-fix';
+const CACHE_NAME = 'aura-v1.9.8-history';
 const FILES_TO_CACHE = [
     './',
     './index.html',

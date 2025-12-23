@@ -148,6 +148,20 @@ class UIRenderer {
                 </div>
             </div>
 
+                </div>
+            </div>
+
+            <!-- HISTORY MODAL v1.9.8 -->
+            <div id="history-modal" class="modal-overlay">
+                <div class="modal-content" style="max-height: 90vh;">
+                    <div class="modal-header">
+                        <h2>Histórico Completo</h2>
+                        <button class="modal-close" id="btn-close-history">×</button>
+                    </div>
+                    <div id="full-history-list" style="display:flex; flex-direction:column; gap:10px; padding-bottom:20px;"></div>
+                </div>
+            </div>
+
             <!-- Tab FINANÇA v1.6.5 Radar Chart -->
             <div id="tab-finance" class="tab-content active">
                 <div style="position: relative; display: flex; justify-content: space-between; align-items: center;">
@@ -217,13 +231,16 @@ class UIRenderer {
                     
                     <!-- Bonus Vault Removed v1.8.0 -->
 
-                    <div class="glass-card">
-                         <h3>Ações Rápidas</h3>
-                         <div style="display:flex; gap:10px;">
-                             <button class="primary expense-mode" id="btn-personal-expense" style="font-size:0.9rem;">📉 Despesa</button>
-                             <button class="primary" id="btn-personal-income" style="font-size:0.9rem; background: var(--success-color, #00C853); border:none;">📈 Rendimento</button>
-                         </div>
-                    </div>
+                     <div class="glass-card">
+                          <h3>Ações Rápidas</h3>
+                          <div style="display:flex; gap:10px;">
+                              <button class="primary expense-mode" id="btn-personal-expense" style="font-size:0.9rem;">📉 Despesa</button>
+                              <button class="primary" id="btn-personal-income" style="font-size:0.9rem; background: var(--success-color, #00C853); border:none;">📈 Rendimento</button>
+                          </div>
+                     </div>
+
+                     <!-- v1.9.8: History Preview -->
+                     <div id="personal-history-preview" style="margin-top: 20px;"></div>
                 </div>
 
 
@@ -284,233 +301,239 @@ class UIRenderer {
             item.addEventListener('click', (e) => this.switchTab(e.currentTarget.getAttribute('data-tab')));
         });
 
-        // --- Modal ---
-        const modal = document.getElementById('settings-modal');
-        document.getElementById('btn-open-settings').addEventListener('click', () => {
-            modal.classList.add('open');
-            if (uiSettings) {
-                uiSettings.renderCategoryManager(document.getElementById('settings-cats-container'));
-                uiSettings.renderDistributionSettings(document.getElementById('settings-distribution-container'));
-            }
-        });
-        document.getElementById('btn-close-modal').addEventListener('click', () => modal.classList.remove('open'));
-        document.querySelectorAll('.modal-tab').forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.modal-tab-content').forEach(c => c.classList.remove('active'));
-                e.target.classList.add('active');
-                document.getElementById(e.target.getAttribute('data-target')).classList.add('active');
-            });
-        });
+    });
 
-        // --- Dual View Logic ---
-        const viewBtns = document.querySelectorAll('.segment-btn');
-        const viewBiz = document.getElementById('view-business');
-        const viewPers = document.getElementById('view-personal');
+    // --- History Modal v1.9.8 ---
+    const histModal = document.getElementById('history-modal');
+        document.getElementById('btn-close-history').addEventListener('click', () => histModal.classList.remove('open'));
 
-        viewBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const target = e.target.dataset.view;
-                viewBtns.forEach(b => b.classList.remove('active'));
-                e.target.classList.add('active');
-                if (target === 'business') {
-                    viewBiz.style.display = 'block';
-                    viewPers.style.display = 'none';
+// --- Modal ---
+const modal = document.getElementById('settings-modal');
+document.getElementById('btn-open-settings').addEventListener('click', () => {
+    modal.classList.add('open');
+    if (uiSettings) {
+        uiSettings.renderCategoryManager(document.getElementById('settings-cats-container'));
+        uiSettings.renderDistributionSettings(document.getElementById('settings-distribution-container'));
+    }
+});
+document.getElementById('btn-close-modal').addEventListener('click', () => modal.classList.remove('open'));
+document.querySelectorAll('.modal-tab').forEach(tab => {
+    tab.addEventListener('click', (e) => {
+        document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.modal-tab-content').forEach(c => c.classList.remove('active'));
+        e.target.classList.add('active');
+        document.getElementById(e.target.getAttribute('data-target')).classList.add('active');
+    });
+});
 
-                } else {
-                    viewBiz.style.display = 'none';
-                    viewPers.style.display = 'block';
-                }
-            });
-        });
+// --- Dual View Logic ---
+const viewBtns = document.querySelectorAll('.segment-btn');
+const viewBiz = document.getElementById('view-business');
+const viewPers = document.getElementById('view-personal');
 
-        // --- Finance Actions ---
-        const btnIncome = document.getElementById('btn-mode-income');
-        const btnExpense = document.getElementById('btn-mode-expense');
-        const submitBtn = document.getElementById('btn-submit-transaction');
-        const expenseContainer = document.getElementById('expense-category-container');
-        const lblAcc = document.getElementById('lbl-acc-select');
+viewBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const target = e.target.dataset.view;
+        viewBtns.forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        if (target === 'business') {
+            viewBiz.style.display = 'block';
+            viewPers.style.display = 'none';
 
-        const setMode = (mode) => {
-            this.transactionMode = mode;
-            if (mode === 'income') {
-                btnIncome.classList.add('active');
-                btnExpense.classList.remove('active');
-                expenseContainer.style.display = 'none';
-                submitBtn.textContent = 'Registar Venda';
-                submitBtn.classList.remove('expense-mode');
-                lblAcc.textContent = 'Destino';
-            } else {
-                btnExpense.classList.add('active');
-                btnIncome.classList.remove('active');
-                expenseContainer.style.display = 'block';
-                submitBtn.textContent = 'Registar Despesa';
-                submitBtn.classList.add('expense-mode');
-                lblAcc.textContent = 'Origem';
-            }
-        };
-        btnIncome.addEventListener('click', () => setMode('income'));
-        btnExpense.addEventListener('click', () => setMode('expense'));
+        } else {
+            viewBiz.style.display = 'none';
+            viewPers.style.display = 'block';
+        }
+    });
+});
 
-        submitBtn.addEventListener('click', () => {
-            const amt = document.getElementById('input-transaction-amount').value;
-            const accId = document.getElementById('select-account-transaction').value;
-            if (!amt || !accId) { alert('Verifique valor e conta.'); return; }
-            if (this.transactionMode === 'income') auraState.processIncome(amt, accId);
-            else auraState.processExpense(amt, document.getElementById('select-expense-bucket').value, accId);
-            document.getElementById('input-transaction-amount').value = '';
-        });
+// --- Finance Actions ---
+const btnIncome = document.getElementById('btn-mode-income');
+const btnExpense = document.getElementById('btn-mode-expense');
+const submitBtn = document.getElementById('btn-submit-transaction');
+const expenseContainer = document.getElementById('expense-category-container');
+const lblAcc = document.getElementById('lbl-acc-select');
 
-        // ADD ACCOUNT v1.6.5
-        document.getElementById('btn-add-acc').addEventListener('click', () => {
-            const v = document.getElementById('new-acc-name').value;
-            const bal = document.getElementById('new-acc-init').value || 0;
-            if (v) {
-                auraState.addAccount(v, bal);
-                document.getElementById('new-acc-name').value = '';
-                document.getElementById('new-acc-init').value = '';
-            }
-        });
+const setMode = (mode) => {
+    this.transactionMode = mode;
+    if (mode === 'income') {
+        btnIncome.classList.add('active');
+        btnExpense.classList.remove('active');
+        expenseContainer.style.display = 'none';
+        submitBtn.textContent = 'Registar Venda';
+        submitBtn.classList.remove('expense-mode');
+        lblAcc.textContent = 'Destino';
+    } else {
+        btnExpense.classList.add('active');
+        btnIncome.classList.remove('active');
+        expenseContainer.style.display = 'block';
+        submitBtn.textContent = 'Registar Despesa';
+        submitBtn.classList.add('expense-mode');
+        lblAcc.textContent = 'Origem';
+    }
+};
+btnIncome.addEventListener('click', () => setMode('income'));
+btnExpense.addEventListener('click', () => setMode('expense'));
 
-        // ADD TEMPLATE v1.6.5
-        document.getElementById('btn-add-tmpl').addEventListener('click', () => {
-            const n = document.getElementById('new-tmpl-name').value;
-            const a = document.getElementById('new-tmpl-amount').value;
-            const d = document.getElementById('new-tmpl-day').value;
-            const auto = document.getElementById('new-tmpl-auto').checked;
+submitBtn.addEventListener('click', () => {
+    const amt = document.getElementById('input-transaction-amount').value;
+    const accId = document.getElementById('select-account-transaction').value;
+    if (!amt || !accId) { alert('Verifique valor e conta.'); return; }
+    if (this.transactionMode === 'income') auraState.processIncome(amt, accId);
+    else auraState.processExpense(amt, document.getElementById('select-expense-bucket').value, accId);
+    document.getElementById('input-transaction-amount').value = '';
+});
 
-            if (n && a) {
-                auraState.addTemplate(n, a, d, auto);
-                document.getElementById('new-tmpl-name').value = '';
-                document.getElementById('new-tmpl-amount').value = '';
-                document.getElementById('new-tmpl-day').value = '';
-            }
-        });
+// ADD ACCOUNT v1.6.5
+document.getElementById('btn-add-acc').addEventListener('click', () => {
+    const v = document.getElementById('new-acc-name').value;
+    const bal = document.getElementById('new-acc-init').value || 0;
+    if (v) {
+        auraState.addAccount(v, bal);
+        document.getElementById('new-acc-name').value = '';
+        document.getElementById('new-acc-init').value = '';
+    }
+});
 
-        document.getElementById('quick-templates-container').addEventListener('click', (e) => {
-            if (e.target.classList.contains('tmpl-pill')) document.getElementById('input-transaction-amount').value = e.target.getAttribute('data-amount');
-        });
-        document.getElementById('transactions-list').addEventListener('click', (e) => {
-            const btn = e.target.closest('.btn-delete');
-            if (btn && confirm('Reverter?')) auraState.deleteTransaction(parseInt(btn.dataset.id));
-        });
+// ADD TEMPLATE v1.6.5
+document.getElementById('btn-add-tmpl').addEventListener('click', () => {
+    const n = document.getElementById('new-tmpl-name').value;
+    const a = document.getElementById('new-tmpl-amount').value;
+    const d = document.getElementById('new-tmpl-day').value;
+    const auto = document.getElementById('new-tmpl-auto').checked;
 
-        // SLIDERS
-        // v1.9.5 Removed Sliders logic (Controlled by renderDistributionSettings)
+    if (n && a) {
+        auraState.addTemplate(n, a, d, auto);
+        document.getElementById('new-tmpl-name').value = '';
+        document.getElementById('new-tmpl-amount').value = '';
+        document.getElementById('new-tmpl-day').value = '';
+    }
+});
 
-        document.getElementById('btn-water').addEventListener('click', () => auraState.addWater());
-        document.getElementById('btn-start-timer').addEventListener('click', () => {
-            const t = document.getElementById('input-study-topic').value;
-            if (t) auraState.startStudyTimer(t);
-        });
+document.getElementById('quick-templates-container').addEventListener('click', (e) => {
+    if (e.target.classList.contains('tmpl-pill')) document.getElementById('input-transaction-amount').value = e.target.getAttribute('data-amount');
+});
+document.getElementById('transactions-list').addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-delete');
+    if (btn && confirm('Reverter?')) auraState.deleteTransaction(parseInt(btn.dataset.id));
+});
 
-        // --- Personal Quick Actions v1.8.0 ---
-        const transModal = document.getElementById('transaction-modal');
-        const pTransAmount = document.getElementById('p-trans-amount');
-        const pTransCat = document.getElementById('p-trans-category');
-        const pTransAcc = document.getElementById('p-trans-account');
-        const pTransCatContainer = document.getElementById('p-trans-cat-container');
-        const pTransTitle = document.getElementById('trans-modal-title');
-        let currentPTransType = 'expense';
+// SLIDERS
+// v1.9.5 Removed Sliders logic (Controlled by renderDistributionSettings)
 
-        const openPTransModal = (type) => {
-            currentPTransType = type;
-            transModal.classList.add('open');
-            pTransAmount.value = '';
+document.getElementById('btn-water').addEventListener('click', () => auraState.addWater());
+document.getElementById('btn-start-timer').addEventListener('click', () => {
+    const t = document.getElementById('input-study-topic').value;
+    if (t) auraState.startStudyTimer(t);
+});
 
-            // Populate Accounts
-            const accounts = auraState.state.finance.accounts;
-            pTransAcc.innerHTML = accounts.map(a => `<option value="${a.id}">${a.name} (${parseFloat(a.balance || 0).toFixed(2)}€)</option>`).join('');
+// --- Personal Quick Actions v1.8.0 ---
+const transModal = document.getElementById('transaction-modal');
+const pTransAmount = document.getElementById('p-trans-amount');
+const pTransCat = document.getElementById('p-trans-category');
+const pTransAcc = document.getElementById('p-trans-account');
+const pTransCatContainer = document.getElementById('p-trans-cat-container');
+const pTransTitle = document.getElementById('trans-modal-title');
+let currentPTransType = 'expense';
 
-            // Populate Categories v1.9.1
-            const cats = auraState.state.finance.personalCategories || [];
-            if (cats.length > 0) {
-                pTransCat.innerHTML = cats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-            } else {
-                pTransCat.innerHTML = '<option value="Outros">Outros</option>';
-            }
+const openPTransModal = (type) => {
+    currentPTransType = type;
+    transModal.classList.add('open');
+    pTransAmount.value = '';
 
-            if (type === 'expense') {
-                pTransTitle.textContent = 'Registar Despesa';
-                pTransTitle.style.color = '#ff4444';
-                pTransCatContainer.style.display = 'block';
-                document.getElementById('p-trans-acc-label').textContent = 'Conta de Origem';
-            } else {
-                pTransTitle.textContent = 'Registar Rendimento';
-                pTransTitle.style.color = 'var(--success-color, #00C853)';
-                pTransCatContainer.style.display = 'none'; // No category for simple income
-                document.getElementById('p-trans-acc-label').textContent = 'Conta de Destino';
-            }
-        };
+    // Populate Accounts
+    const accounts = auraState.state.finance.accounts;
+    pTransAcc.innerHTML = accounts.map(a => `<option value="${a.id}">${a.name} (${parseFloat(a.balance || 0).toFixed(2)}€)</option>`).join('');
 
-        document.getElementById('btn-personal-expense').addEventListener('click', () => openPTransModal('expense'));
-        document.getElementById('btn-personal-income').addEventListener('click', () => openPTransModal('income'));
-        document.getElementById('btn-close-trans-modal').addEventListener('click', () => transModal.classList.remove('open'));
-
-        document.getElementById('btn-confirm-p-trans').addEventListener('click', () => {
-            const amt = pTransAmount.value;
-            const accId = pTransAcc.value;
-            const cat = currentPTransType === 'expense' ? pTransCat.value : null;
-
-            if (amt && accId) {
-                auraState.addPersonalTransaction(currentPTransType, amt, cat, accId);
-                transModal.classList.remove('open');
-            } else {
-                alert('Preencha o valor e selecione uma conta.');
-            }
-        });
+    // Populate Categories v1.9.1
+    const cats = auraState.state.finance.personalCategories || [];
+    if (cats.length > 0) {
+        pTransCat.innerHTML = cats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    } else {
+        pTransCat.innerHTML = '<option value="Outros">Outros</option>';
     }
 
-    switchTab(tabName) {
-        this.activeTab = tabName;
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-        document.getElementById(`tab-${tabName}`).classList.add('active');
-        document.querySelectorAll('.nav-item').forEach(el => {
-            el.classList.remove('active');
-            if (el.getAttribute('data-tab') === tabName) el.classList.add('active');
-        });
-        if (tabName === 'finance' && document.getElementById('view-business').style.display !== 'none') {
+    if (type === 'expense') {
+        pTransTitle.textContent = 'Registar Despesa';
+        pTransTitle.style.color = '#ff4444';
+        pTransCatContainer.style.display = 'block';
+        document.getElementById('p-trans-acc-label').textContent = 'Conta de Origem';
+    } else {
+        pTransTitle.textContent = 'Registar Rendimento';
+        pTransTitle.style.color = 'var(--success-color, #00C853)';
+        pTransCatContainer.style.display = 'none'; // No category for simple income
+        document.getElementById('p-trans-acc-label').textContent = 'Conta de Destino';
+    }
+};
 
-        }
+document.getElementById('btn-personal-expense').addEventListener('click', () => openPTransModal('expense'));
+document.getElementById('btn-personal-income').addEventListener('click', () => openPTransModal('income'));
+document.getElementById('btn-close-trans-modal').addEventListener('click', () => transModal.classList.remove('open'));
+
+document.getElementById('btn-confirm-p-trans').addEventListener('click', () => {
+    const amt = pTransAmount.value;
+    const accId = pTransAcc.value;
+    const cat = currentPTransType === 'expense' ? pTransCat.value : null;
+
+    if (amt && accId) {
+        auraState.addPersonalTransaction(currentPTransType, amt, cat, accId);
+        transModal.classList.remove('open');
+    } else {
+        alert('Preencha o valor e selecione uma conta.');
+    }
+});
     }
 
-    // Deprecated v1.9.5
+switchTab(tabName) {
+    this.activeTab = tabName;
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.getElementById(`tab-${tabName}`).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(el => {
+        el.classList.remove('active');
+        if (el.getAttribute('data-tab') === tabName) el.classList.add('active');
+    });
+    if (tabName === 'finance' && document.getElementById('view-business').style.display !== 'none') {
 
-    handleTimerState(state) {
-        // ... (std)
+    }
+}
+
+// Deprecated v1.9.5
+
+handleTimerState(state) {
+    // ... (std)
+}
+
+updateUI(state) {
+    const { labels, buckets, accounts, templates } = state.finance;
+    console.log('UI: updating. Accounts:', accounts.length);
+
+    // --- Business View Widgets ---
+    // --- Business View Widgets ---
+    if (document.getElementById('business-balance-display')) {
+        // v1.9.5: Sum of all Business Buckets
+        const totalBiz = state.finance.businessBuckets.reduce((sum, b) => sum + (parseFloat(b.balance) || 0), 0);
+        document.getElementById('business-balance-display').textContent = `${totalBiz.toFixed(2)} €`;
     }
 
-    updateUI(state) {
-        const { labels, buckets, accounts, templates } = state.finance;
-        console.log('UI: updating. Accounts:', accounts.length);
+    // v1.9.5: Populate Expense Dropdown
+    const expSelect = document.getElementById('select-expense-bucket');
+    if (expSelect) {
+        const currentVal = expSelect.value;
+        expSelect.innerHTML = state.finance.businessBuckets.map(b =>
+            `<option value="${b.id}">${b.name} (${parseFloat(b.balance).toFixed(2)}€)</option>`
+        ).join('');
+        if (currentVal && state.finance.businessBuckets.find(b => b.id === currentVal)) expSelect.value = currentVal;
+    }
 
-        // --- Business View Widgets ---
-        // --- Business View Widgets ---
-        if (document.getElementById('business-balance-display')) {
-            // v1.9.5: Sum of all Business Buckets
-            const totalBiz = state.finance.businessBuckets.reduce((sum, b) => sum + (parseFloat(b.balance) || 0), 0);
-            document.getElementById('business-balance-display').textContent = `${totalBiz.toFixed(2)} €`;
-        }
-
-        // v1.9.5: Populate Expense Dropdown
-        const expSelect = document.getElementById('select-expense-bucket');
-        if (expSelect) {
-            const currentVal = expSelect.value;
-            expSelect.innerHTML = state.finance.businessBuckets.map(b =>
-                `<option value="${b.id}">${b.name} (${parseFloat(b.balance).toFixed(2)}€)</option>`
-            ).join('');
-            if (currentVal && state.finance.businessBuckets.find(b => b.id === currentVal)) expSelect.value = currentVal;
-        }
-
-        // ROI Clocks
-        const clocksContainer = document.getElementById('roi-clocks-container');
-        if (clocksContainer) {
-            const clocksHTML = templates.map(t => {
-                let color = '#ff4444'; // Low
-                let p = 25;
-                if (t.amount > 100) { color = '#ffcc00'; p = 50; }
-                if (t.amount > 500) { color = '#00ff9d'; p = 75; }
-                return `
+    // ROI Clocks
+    const clocksContainer = document.getElementById('roi-clocks-container');
+    if (clocksContainer) {
+        const clocksHTML = templates.map(t => {
+            let color = '#ff4444'; // Low
+            let p = 25;
+            if (t.amount > 100) { color = '#ffcc00'; p = 50; }
+            if (t.amount > 500) { color = '#00ff9d'; p = 75; }
+            return `
                 <div class="roi-clock">
                     <div class="gauge-circle" style="background: conic-gradient(${color} ${p}%, #333 0);">
                         <div style="position:absolute; width:50px; height:50px; background:#1e1e1e; border-radius:50%; display:flex; align-items:center; justify-content:center;">
@@ -519,153 +542,225 @@ class UIRenderer {
                     </div>
                     <span style="font-size:0.7rem; color:#aaa;">${t.name}</span>
                 </div>`;
-            }).join('');
-            clocksContainer.innerHTML = clocksHTML || '<span style="color:#555; font-size:0.8rem;">Sem templates</span>';
-        }
+        }).join('');
+        clocksContainer.innerHTML = clocksHTML || '<span style="color:#555; font-size:0.8rem;">Sem templates</span>';
+    }
 
-        // --- Personal View Widgets ---
-        // --- Personal View Widgets (Replaced by New UI Module v1.9.1) ---
-        const pHeader = document.getElementById('personal-dynamic-header');
-        if (pHeader) {
-            pHeader.innerHTML = '';
-            uiPersonal.renderPersonalHeader(pHeader);
-        }
+    // --- Personal View Widgets ---
+    // --- Personal View Widgets (Replaced by New UI Module v1.9.1) ---
+    if (pHeader) {
+        pHeader.innerHTML = '';
+        uiPersonal.renderPersonalHeader(pHeader);
+    }
 
-
-        // v1.9.0: Update Radar Chart
-        this.drawPersonalRadar(auraState.getMonthlyPersonalExpenses());
-
-        // --- Standard Updates ---
-        // v1.7.5_fix Transaction Dropdown Logic
-        const accSelect = document.getElementById('select-account-transaction');
-        // Note: we want to preserve selection if possible, but options might change.
-        // Simplified: Just render.
-        if (accSelect) {
-            const currentVal = accSelect.value;
-            accSelect.innerHTML = accounts.map(a => `<option value="${a.id}">${a.name} (${parseFloat(a.balance).toFixed(2)}€)</option>`).join('');
-            // Restore if valid
-            if (currentVal && accounts.find(a => a.id === currentVal)) {
-                accSelect.value = currentVal;
-            }
-        }
-
-        // Also update the Settings list while we are here
-        const settingsList = document.getElementById('accounts-list-settings');
-        if (settingsList) {
-            settingsList.innerHTML = accounts.map(a =>
-                `<div class="account-item"><span>${a.name} (${parseFloat(a.balance).toFixed(2)}€)</span><button class="btn-del-acc" data-id="${a.id}" style="color:red; background:none; border:none;">🗑️</button></div>`
-            ).join('');
-        }
-
-        document.getElementById('templates-list-settings').innerHTML = templates.map(t => `<div class="account-item"><span>${t.name} (${t.amount}€)</span><button class="btn-del-tmpl" data-id="${t.id}" style="color:red; background:none; border:none;">×</button></div>`).join('');
-
-        const quickHTML = templates.map(t =>
-            `<button class="tmpl-pill" data-amount="${t.amount}" style="white-space:nowrap; background:rgba(255,255,255,0.1); border:1px solid #444; padding:5px 10px; border-radius:15px; color:#fff; cursor:pointer;">${t.name}</button>`
-        ).join('');
-        document.getElementById('quick-templates-container').innerHTML = quickHTML;
-
-        // Transaction List... (abbreviated, same as before)
-        const listEl = document.getElementById('transactions-list');
-        const txs = state.finance.transactions || [];
-        if (listEl) {
-            if (txs.length === 0) { listEl.innerHTML = '<div style="opacity:0.5; text-align:center;">Sem movimentos</div>'; }
-            else {
-                listEl.innerHTML = txs.map(t => {
-                    const date = new Date(t.date).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', hour: '2-digit' });
-                    const isExpense = t.type === 'expense';
-                    const sign = isExpense ? '-' : '+';
-                    const classColor = isExpense ? 'text-danger' : 'text-success';
-                    return `<div class="transaction-item"><div class="transaction-info"><span class="${classColor}" style="font-weight:bold">${sign}${t.amount.toFixed(2)} €</span><span class="transaction-meta">${date} • ${t.category || 'Venda'}</span></div><button class="btn-delete" data-id="${t.id}">🗑️</button></div>`;
-                }).join('');
-            }
+    // v1.9.8: Preview History
+    const pHistory = document.getElementById('personal-history-preview');
+    if (pHistory) {
+        uiPersonal.renderTransactionPreview(pHistory);
+        // Attach Listener (dynamic element)
+        const btnViewAll = document.getElementById('btn-view-all-history');
+        if (btnViewAll) {
+            btnViewAll.onclick = () => this.openFullHistoryModal();
         }
     }
 
 
+    // v1.9.0: Update Radar Chart
+    this.drawPersonalRadar(auraState.getMonthlyPersonalExpenses());
 
-    // v1.9.1: Dynamic Personal Radar Chart (N-gon)
-    drawPersonalRadar(data) {
-        const canvas = document.getElementById('personal-radar-canvas');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        const width = canvas.width;
-        const height = canvas.height;
-        const cx = width / 2;
-        const cy = height / 2;
-        const maxRadius = Math.min(width, height) / 2 - 30; // 30px padding for labels
-
-        ctx.clearRect(0, 0, width, height);
-
-        const categories = Object.keys(data);
-        const numAxes = categories.length;
-        if (numAxes < 3) return; // Need at least 3 for a polygon
-
-        const angleSlice = (Math.PI * 2) / numAxes;
-
-        // 1. Draw Web
-        ctx.strokeStyle = '#444';
-        ctx.lineWidth = 1;
-
-        for (let r = 0.2; r <= 1.0; r += 0.2) {
-            ctx.beginPath();
-            for (let i = 0; i <= numAxes; i++) {
-                const angle = i * angleSlice - Math.PI / 2;
-                const radius = maxRadius * r;
-                const x = cx + Math.cos(angle) * radius;
-                const y = cy + Math.sin(angle) * radius;
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-            }
-            ctx.stroke();
+    // --- Standard Updates ---
+    // v1.7.5_fix Transaction Dropdown Logic
+    const accSelect = document.getElementById('select-account-transaction');
+    // Note: we want to preserve selection if possible, but options might change.
+    // Simplified: Just render.
+    if (accSelect) {
+        const currentVal = accSelect.value;
+        accSelect.innerHTML = accounts.map(a => `<option value="${a.id}">${a.name} (${parseFloat(a.balance).toFixed(2)}€)</option>`).join('');
+        // Restore if valid
+        if (currentVal && accounts.find(a => a.id === currentVal)) {
+            accSelect.value = currentVal;
         }
+    }
 
-        // 2. Draw Axes & Labels
-        ctx.fillStyle = '#aaa';
-        ctx.font = '10px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
+    // Also update the Settings list while we are here
+    const settingsList = document.getElementById('accounts-list-settings');
+    if (settingsList) {
+        settingsList.innerHTML = accounts.map(a =>
+            `<div class="account-item"><span>${a.name} (${parseFloat(a.balance).toFixed(2)}€)</span><button class="btn-del-acc" data-id="${a.id}" style="color:red; background:none; border:none;">🗑️</button></div>`
+        ).join('');
+    }
 
-        categories.forEach((cat, i) => {
-            const angle = i * angleSlice - Math.PI / 2;
-            const x = cx + Math.cos(angle) * maxRadius;
-            const y = cy + Math.sin(angle) * maxRadius;
+    document.getElementById('templates-list-settings').innerHTML = templates.map(t => `<div class="account-item"><span>${t.name} (${t.amount}€)</span><button class="btn-del-tmpl" data-id="${t.id}" style="color:red; background:none; border:none;">×</button></div>`).join('');
 
-            // Axis line
-            ctx.beginPath();
-            ctx.moveTo(cx, cy);
-            ctx.lineTo(x, y);
-            ctx.stroke();
+    const quickHTML = templates.map(t =>
+        `<button class="tmpl-pill" data-amount="${t.amount}" style="white-space:nowrap; background:rgba(255,255,255,0.1); border:1px solid #444; padding:5px 10px; border-radius:15px; color:#fff; cursor:pointer;">${t.name}</button>`
+    ).join('');
+    document.getElementById('quick-templates-container').innerHTML = quickHTML;
 
-            // Label
-            const labelDist = maxRadius + 15;
-            const lx = cx + Math.cos(angle) * labelDist;
-            const ly = cy + Math.sin(angle) * labelDist;
-            ctx.fillText(cat, lx, ly);
-        });
+    // Transaction List... (abbreviated, same as before)
+    const listEl = document.getElementById('transactions-list');
+    const txs = state.finance.transactions || [];
+    if (listEl) {
+        if (txs.length === 0) { listEl.innerHTML = '<div style="opacity:0.5; text-align:center;">Sem movimentos</div>'; }
+        else {
+            listEl.innerHTML = txs.map(t => {
+                const date = new Date(t.date).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', hour: '2-digit' });
+                const isExpense = t.type === 'expense';
+                const sign = isExpense ? '-' : '+';
+                const classColor = isExpense ? 'text-danger' : 'text-success';
+                return `<div class="transaction-item"><div class="transaction-info"><span class="${classColor}" style="font-weight:bold">${sign}${t.amount.toFixed(2)} €</span><span class="transaction-meta">${date} • ${t.category || 'Venda'}</span></div><button class="btn-delete" data-id="${t.id}">🗑️</button></div>`;
+            }).join('');
+        }
+    }
+}
 
-        // 3. Draw Data
-        const values = Object.values(data);
-        const maxData = Math.max(...values, 100); // Scale relative to max or 100 min
 
-        ctx.fillStyle = 'rgba(0, 212, 255, 0.5)';
-        ctx.strokeStyle = '#00d4ff';
-        ctx.lineWidth = 2;
+
+// v1.9.1: Dynamic Personal Radar Chart (N-gon)
+drawPersonalRadar(data) {
+    const canvas = document.getElementById('personal-radar-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    const cx = width / 2;
+    const cy = height / 2;
+    const maxRadius = Math.min(width, height) / 2 - 30; // 30px padding for labels
+
+    ctx.clearRect(0, 0, width, height);
+
+    const categories = Object.keys(data);
+    const numAxes = categories.length;
+    if (numAxes < 3) return; // Need at least 3 for a polygon
+
+    const angleSlice = (Math.PI * 2) / numAxes;
+
+    // 1. Draw Web
+    ctx.strokeStyle = '#444';
+    ctx.lineWidth = 1;
+
+    for (let r = 0.2; r <= 1.0; r += 0.2) {
         ctx.beginPath();
-
-        categories.forEach((cat, i) => {
-            const val = data[cat];
-            const r = (val / maxData) * maxRadius;
+        for (let i = 0; i <= numAxes; i++) {
             const angle = i * angleSlice - Math.PI / 2;
-            const x = cx + Math.cos(angle) * r;
-            const y = cy + Math.sin(angle) * r;
+            const radius = maxRadius * r;
+            const x = cx + Math.cos(angle) * radius;
+            const y = cy + Math.sin(angle) * radius;
             if (i === 0) ctx.moveTo(x, y);
             else ctx.lineTo(x, y);
-        });
-
-        ctx.closePath();
-        ctx.fill();
+        }
         ctx.stroke();
     }
+
+    // 2. Draw Axes & Labels
+    ctx.fillStyle = '#aaa';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    categories.forEach((cat, i) => {
+        const angle = i * angleSlice - Math.PI / 2;
+        const x = cx + Math.cos(angle) * maxRadius;
+        const y = cy + Math.sin(angle) * maxRadius;
+
+        // Axis line
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+
+        // Label
+        const labelDist = maxRadius + 15;
+        const lx = cx + Math.cos(angle) * labelDist;
+        const ly = cy + Math.sin(angle) * labelDist;
+        ctx.fillText(cat, lx, ly);
+    });
+
+    // 3. Draw Data
+    const values = Object.values(data);
+    const maxData = Math.max(...values, 100); // Scale relative to max or 100 min
+
+    ctx.fillStyle = 'rgba(0, 212, 255, 0.5)';
+    ctx.strokeStyle = '#00d4ff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+
+    categories.forEach((cat, i) => {
+        const val = data[cat];
+        const r = (val / maxData) * maxRadius;
+        const angle = i * angleSlice - Math.PI / 2;
+        const x = cx + Math.cos(angle) * r;
+        const y = cy + Math.sin(angle) * r;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    });
+
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+}
+// v1.9.8: Full History Modal
+openFullHistoryModal() {
+    const modal = document.getElementById('history-modal');
+    const container = document.getElementById('full-history-list');
+    if (!modal || !container) return;
+
+    container.innerHTML = '';
+    const txs = [...(auraState.state.finance.transactions || [])].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (txs.length === 0) {
+        container.innerHTML = '<div style="opacity:0.6; text-align:center;">Sem movimentos registados.</div>';
+    } else {
+        txs.forEach(t => {
+            const isExpense = t.type === 'expense';
+            const color = isExpense ? '#ff4444' : '#00e676';
+            const sign = isExpense ? '-' : '+';
+            const dateStr = new Date(t.date).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', hour: '2-digit' });
+
+            // Colors Matching Personal Cats
+            let catColor = color;
+            if (t.category) {
+                const pCat = (auraState.state.finance.personalCategories || []).find(c => c.name === t.category);
+                if (pCat) catColor = pCat.color;
+            }
+
+            const item = document.createElement('div');
+            item.className = 'glass-card';
+            item.style.margin = '0 auto';
+            item.style.width = '100%';
+            item.style.padding = '12px';
+            item.style.display = 'flex';
+            item.style.justifyContent = 'space-between';
+            item.style.alignItems = 'center';
+
+            item.innerHTML = `
+                   <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="width:12px; height:12px; border-radius:50%; background:${catColor};"></div>
+                        <div style="display:flex; flex-direction:column;">
+                             <span style="font-weight:bold; font-size:1rem;">${t.category || (isExpense ? 'Despesa' : 'Rendimento')}</span>
+                             <span style="font-size:0.8rem; color:#aaa;">${t.summary || ''} • ${dateStr}</span>
+                        </div>
+                   </div>
+                   <div style="display:flex; align-items:center; gap:15px;">
+                        <span style="color:${color}; font-weight:bold; font-size:1.1rem;">${sign}${t.amount.toFixed(2)}€</span>
+                        <button class="btn-del-full" data-id="${t.id}" style="background:none; border:none; color:#ff4444; font-size:1.2rem; cursor:pointer;">🗑️</button>
+                   </div>
+                `;
+
+            // Delete Logic
+            item.querySelector('.btn-del-full').onclick = () => {
+                if (confirm('Apagar movimento permanentemente?')) {
+                    auraState.deleteTransaction(t.id);
+                    this.openFullHistoryModal(); // Refresh Modal List
+                }
+            };
+
+            container.appendChild(item);
+        });
+    }
+
+    modal.classList.add('open');
+}
 }
 
 export const uiRenderer = new UIRenderer();
