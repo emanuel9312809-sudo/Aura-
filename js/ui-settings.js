@@ -102,16 +102,15 @@ export const uiSettings = {
                 this.renderSubcategoryManager(document.getElementById('subcat-manager-container')); // Refresh subs if exists
             }
         };
-    };
 
-    // v2.7: Render Budget Allocation
-    const budgetContainer = document.createElement('div');
-    budgetContainer.style.marginTop = '20px';
-    budgetContainer.style.borderTop = '1px solid rgba(255,255,255,0.1)';
-    budgetContainer.style.paddingTop = '15px';
-    container.appendChild(budgetContainer);
-    this.renderPersonalAllocation(budgetContainer);
-},
+        // v2.7: Render Budget Allocation
+        const budgetContainer = document.createElement('div');
+        budgetContainer.style.marginTop = '20px';
+        budgetContainer.style.borderTop = '1px solid rgba(255,255,255,0.1)';
+        budgetContainer.style.paddingTop = '15px';
+        container.appendChild(budgetContainer);
+        this.renderPersonalAllocation(budgetContainer);
+    },
 
     // v2.4.1: Dedicated Subcategory Manager
     renderSubcategoryManager(container) {
@@ -230,30 +229,30 @@ export const uiSettings = {
         });
     },
 
-        // v2.7: Personal Budget Allocation UI
-        renderPersonalAllocation(container) {
-    if (!container) return;
+    // v2.7: Personal Budget Allocation UI
+    renderPersonalAllocation(container) {
+        if (!container) return;
 
-    // Clone for local editing
-    let cats = JSON.parse(JSON.stringify(auraState.state.finance.personalCategories || []));
+        // Clone for local editing
+        let cats = JSON.parse(JSON.stringify(auraState.state.finance.personalCategories || []));
 
-    const render = () => {
-        container.innerHTML = '<h3>Orçamento Pessoal (%)</h3>';
+        const render = () => {
+            container.innerHTML = '<h3>Orçamento Pessoal (%)</h3>';
 
-        const total = cats.reduce((sum, c) => sum + (parseFloat(c.allocation) || 0), 0);
-        const isValid = Math.abs(total - 100) < 0.1;
+            const total = cats.reduce((sum, c) => sum + (parseFloat(c.allocation) || 0), 0);
+            const isValid = Math.abs(total - 100) < 0.1;
 
-        const list = document.createElement('div');
-        list.style.display = 'flex';
-        list.style.flexDirection = 'column';
-        list.style.gap = '10px';
-        container.appendChild(list);
+            const list = document.createElement('div');
+            list.style.display = 'flex';
+            list.style.flexDirection = 'column';
+            list.style.gap = '10px';
+            container.appendChild(list);
 
-        cats.forEach((c, index) => {
-            const row = document.createElement('div');
-            row.className = 'glass-card';
-            row.style.padding = '10px';
-            row.innerHTML = `
+            cats.forEach((c, index) => {
+                const row = document.createElement('div');
+                row.className = 'glass-card';
+                row.style.padding = '10px';
+                row.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
                         <span>${c.name}</span>
                         <div style="display:flex; align-items:center; gap:5px;">
@@ -263,102 +262,102 @@ export const uiSettings = {
                     </div>
                     <input type="range" class="alloc-slider" data-index="${index}" min="0" max="100" value="${c.allocation || 0}" style="width:100%;">
                 `;
-            list.appendChild(row);
+                list.appendChild(row);
 
-            // Events
-            const inp = row.querySelector('.alloc-input');
-            const sli = row.querySelector('.alloc-slider');
+                // Events
+                const inp = row.querySelector('.alloc-input');
+                const sli = row.querySelector('.alloc-slider');
 
-            inp.oninput = (e) => {
-                let v = parseFloat(e.target.value) || 0;
-                if (v < 0) v = 0; if (v > 100) v = 100;
-                cats[index].allocation = v;
-                sli.value = v;
-                updateTotal();
+                inp.oninput = (e) => {
+                    let v = parseFloat(e.target.value) || 0;
+                    if (v < 0) v = 0; if (v > 100) v = 100;
+                    cats[index].allocation = v;
+                    sli.value = v;
+                    updateTotal();
+                };
+                sli.oninput = (e) => {
+                    const v = parseFloat(e.target.value);
+                    cats[index].allocation = v;
+                    inp.value = v;
+                    updateTotal();
+                };
+            });
+
+            // Footer
+            const footer = document.createElement('div');
+            footer.innerHTML = `Total: <strong id="alloc-total" style="color:${isValid ? '#00e676' : '#ff4444'}">${total.toFixed(0)}%</strong>`;
+            footer.style.textAlign = 'right';
+            footer.style.marginBottom = '10px';
+            container.appendChild(footer);
+
+            const btnSave = document.createElement('button');
+            btnSave.className = 'primary';
+            btnSave.textContent = 'Salvar Orçamento';
+            btnSave.style.width = '100%';
+            btnSave.disabled = !isValid;
+            btnSave.onclick = () => {
+                if (isValid) {
+                    auraState.savePersonalAllocations(cats);
+                    alert('Orçamento Salvo!');
+                }
             };
-            sli.oninput = (e) => {
-                const v = parseFloat(e.target.value);
-                cats[index].allocation = v;
-                inp.value = v;
-                updateTotal();
-            };
-        });
-
-        // Footer
-        const footer = document.createElement('div');
-        footer.innerHTML = `Total: <strong id="alloc-total" style="color:${isValid ? '#00e676' : '#ff4444'}">${total.toFixed(0)}%</strong>`;
-        footer.style.textAlign = 'right';
-        footer.style.marginBottom = '10px';
-        container.appendChild(footer);
-
-        const btnSave = document.createElement('button');
-        btnSave.className = 'primary';
-        btnSave.textContent = 'Salvar Orçamento';
-        btnSave.style.width = '100%';
-        btnSave.disabled = !isValid;
-        btnSave.onclick = () => {
-            if (isValid) {
-                auraState.savePersonalAllocations(cats);
-                alert('Orçamento Salvo!');
-            }
+            container.appendChild(btnSave);
         };
-        container.appendChild(btnSave);
-    };
 
-    const updateTotal = () => {
-        const total = cats.reduce((sum, c) => sum + (parseFloat(c.allocation) || 0), 0);
-        const isValid = Math.abs(total - 100) < 0.1;
-        const tEl = container.querySelector('#alloc-total');
-        const btn = container.querySelector('button.primary');
-        if (tEl) {
-            tEl.textContent = total.toFixed(0) + '%';
-            tEl.style.color = isValid ? '#00e676' : '#ff4444';
-        }
-        if (btn) btn.disabled = !isValid;
-    };
+        const updateTotal = () => {
+            const total = cats.reduce((sum, c) => sum + (parseFloat(c.allocation) || 0), 0);
+            const isValid = Math.abs(total - 100) < 0.1;
+            const tEl = container.querySelector('#alloc-total');
+            const btn = container.querySelector('button.primary');
+            if (tEl) {
+                tEl.textContent = total.toFixed(0) + '%';
+                tEl.style.color = isValid ? '#00e676' : '#ff4444';
+            }
+            if (btn) btn.disabled = !isValid;
+        };
 
-    render();
-},
+        render();
+    },
 
-refreshList(container) {
-    // Deprecated internal method
-    console.warn('refreshList is deprecated');
-},
+    refreshList(container) {
+        // Deprecated internal method
+        console.warn('refreshList is deprecated');
+    },
 
-// v1.9.5: Dynamic Business Distribution Settings
-renderDistributionSettings(container) {
-    if (!container) return;
+    // v1.9.5: Dynamic Business Distribution Settings
+    renderDistributionSettings(container) {
+        if (!container) return;
 
-    // Clone current state deep enough to edit without autosaving until "Save"
-    let localBuckets = JSON.parse(JSON.stringify(auraState.state.finance.businessBuckets));
+        // Clone current state deep enough to edit without autosaving until "Save"
+        let localBuckets = JSON.parse(JSON.stringify(auraState.state.finance.businessBuckets));
 
-    const render = () => {
-        container.innerHTML = '';
+        const render = () => {
+            container.innerHTML = '';
 
-        // Header
-        const header = document.createElement('h3');
-        header.textContent = 'Distribuição de Negócio (%)';
-        container.appendChild(header);
+            // Header
+            const header = document.createElement('h3');
+            header.textContent = 'Distribuição de Negócio (%)';
+            container.appendChild(header);
 
-        // Calculate Total
-        const total = localBuckets.reduce((sum, b) => sum + (parseFloat(b.percent) || 0), 0);
-        const isValid = Math.abs(total - 100) < 0.1; // Float tolerance
+            // Calculate Total
+            const total = localBuckets.reduce((sum, b) => sum + (parseFloat(b.percent) || 0), 0);
+            const isValid = Math.abs(total - 100) < 0.1; // Float tolerance
 
-        // List of Buckets
-        const list = document.createElement('div');
-        list.style.display = 'flex';
-        list.style.flexDirection = 'column';
-        list.style.gap = '15px';
-        container.appendChild(list);
+            // List of Buckets
+            const list = document.createElement('div');
+            list.style.display = 'flex';
+            list.style.flexDirection = 'column';
+            list.style.gap = '15px';
+            container.appendChild(list);
 
-        localBuckets.forEach((b, index) => {
-            const row = document.createElement('div');
-            row.className = 'glass-card'; // Styling
-            row.style.margin = '0';
-            row.style.padding = '10px';
+            localBuckets.forEach((b, index) => {
+                const row = document.createElement('div');
+                row.className = 'glass-card'; // Styling
+                row.style.margin = '0';
+                row.style.padding = '10px';
 
-            // Row Layout: Name | % Input | Slider | Delete
-            row.innerHTML = `
+                // Row Layout: Name | % Input | Slider | Delete
+                row.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
                         <input type="text" value="${b.name}" class="bucket-name-input" data-index="${index}" style="width:60%;" placeholder="Nome">
                         <div style="display:flex; align-items:center; gap:5px;">
@@ -369,99 +368,99 @@ renderDistributionSettings(container) {
                     </div>
                     <input type="range" class="bucket-slider" data-index="${index}" min="0" max="100" value="${b.percent}" style="width:100%;">
                 `;
-            list.appendChild(row);
+                list.appendChild(row);
 
-            // Events
-            const nameInp = row.querySelector('.bucket-name-input');
-            const percInp = row.querySelector('.bucket-perc-input');
-            const slider = row.querySelector('.bucket-slider');
-            const delBtn = row.querySelector('.btn-del-bucket');
+                // Events
+                const nameInp = row.querySelector('.bucket-name-input');
+                const percInp = row.querySelector('.bucket-perc-input');
+                const slider = row.querySelector('.bucket-slider');
+                const delBtn = row.querySelector('.btn-del-bucket');
 
-            nameInp.onchange = (e) => { localBuckets[index].name = e.target.value; };
+                nameInp.onchange = (e) => { localBuckets[index].name = e.target.value; };
 
-            // Sync Logic: Input -> Slider
-            percInp.oninput = (e) => {
-                let val = parseFloat(e.target.value) || 0;
-                if (val < 0) val = 0; if (val > 100) val = 100;
-                localBuckets[index].percent = val;
-                // Don't update slider immediately if typing decimals? 
-                // To keep it simple:
-                slider.value = val;
-                updateTotal();
+                // Sync Logic: Input -> Slider
+                percInp.oninput = (e) => {
+                    let val = parseFloat(e.target.value) || 0;
+                    if (val < 0) val = 0; if (val > 100) val = 100;
+                    localBuckets[index].percent = val;
+                    // Don't update slider immediately if typing decimals? 
+                    // To keep it simple:
+                    slider.value = val;
+                    updateTotal();
+                };
+
+                // Sync Logic: Slider -> Input
+                slider.oninput = (e) => {
+                    const val = parseFloat(e.target.value);
+                    localBuckets[index].percent = val;
+                    percInp.value = val;
+                    updateTotal();
+                };
+
+                if (delBtn) delBtn.onclick = () => {
+                    if (confirm('Remover este balde? O saldo permanecerá na conta, mas a distribuição futura cessa.')) {
+                        localBuckets.splice(index, 1);
+                        render();
+                    }
+                };
+            });
+
+            // Footer: Add & Total & Save
+            const footer = document.createElement('div');
+            footer.style.marginTop = '20px';
+            footer.style.borderTop = '1px solid rgba(255,255,255,0.1)';
+            footer.style.paddingTop = '10px';
+            footer.style.display = 'flex';
+            footer.style.flexDirection = 'column';
+            footer.style.gap = '10px';
+
+            // Add Button
+            const btnAdd = document.createElement('button');
+            btnAdd.textContent = '+ Novo Balde';
+            btnAdd.className = 'secondary';
+            btnAdd.style.width = '100%';
+            btnAdd.onclick = () => {
+                localBuckets.push({ id: 'custom_' + Date.now(), name: 'Novo Balde', percent: 0, balance: 0 });
+                render();
             };
+            footer.appendChild(btnAdd);
 
-            // Sync Logic: Slider -> Input
-            slider.oninput = (e) => {
-                const val = parseFloat(e.target.value);
-                localBuckets[index].percent = val;
-                percInp.value = val;
-                updateTotal();
-            };
+            // Total Display
+            const totalDisplay = document.createElement('div');
+            totalDisplay.innerHTML = `Total Atual: <strong style="color: ${isValid ? '#00e676' : '#ff4444'}">${total.toFixed(1)}%</strong>`;
+            totalDisplay.style.textAlign = 'right';
+            footer.appendChild(totalDisplay);
 
-            if (delBtn) delBtn.onclick = () => {
-                if (confirm('Remover este balde? O saldo permanecerá na conta, mas a distribuição futura cessa.')) {
-                    localBuckets.splice(index, 1);
-                    render();
+            // Save Button
+            const btnSave = document.createElement('button');
+            btnSave.textContent = 'Salvar Distribuição';
+            btnSave.className = 'primary';
+            btnSave.style.width = '100%';
+            btnSave.disabled = !isValid;
+            btnSave.onclick = () => {
+                if (isValid) {
+                    auraState.saveBusinessBuckets(localBuckets);
+                    alert('Distribuição Salva!');
                 }
             };
-        });
+            footer.appendChild(btnSave);
 
-        // Footer: Add & Total & Save
-        const footer = document.createElement('div');
-        footer.style.marginTop = '20px';
-        footer.style.borderTop = '1px solid rgba(255,255,255,0.1)';
-        footer.style.paddingTop = '10px';
-        footer.style.display = 'flex';
-        footer.style.flexDirection = 'column';
-        footer.style.gap = '10px';
-
-        // Add Button
-        const btnAdd = document.createElement('button');
-        btnAdd.textContent = '+ Novo Balde';
-        btnAdd.className = 'secondary';
-        btnAdd.style.width = '100%';
-        btnAdd.onclick = () => {
-            localBuckets.push({ id: 'custom_' + Date.now(), name: 'Novo Balde', percent: 0, balance: 0 });
-            render();
+            container.appendChild(footer);
         };
-        footer.appendChild(btnAdd);
 
-        // Total Display
-        const totalDisplay = document.createElement('div');
-        totalDisplay.innerHTML = `Total Atual: <strong style="color: ${isValid ? '#00e676' : '#ff4444'}">${total.toFixed(1)}%</strong>`;
-        totalDisplay.style.textAlign = 'right';
-        footer.appendChild(totalDisplay);
+        const updateTotal = () => {
+            const total = localBuckets.reduce((sum, b) => sum + (parseFloat(b.percent) || 0), 0);
+            const isValid = Math.abs(total - 100) < 0.1;
 
-        // Save Button
-        const btnSave = document.createElement('button');
-        btnSave.textContent = 'Salvar Distribuição';
-        btnSave.className = 'primary';
-        btnSave.style.width = '100%';
-        btnSave.disabled = !isValid;
-        btnSave.onclick = () => {
-            if (isValid) {
-                auraState.saveBusinessBuckets(localBuckets);
-                alert('Distribuição Salva!');
+            const totalEl = container.querySelector('strong');
+            if (totalEl) {
+                totalEl.innerHTML = `${total.toFixed(1)}%`;
+                totalEl.style.color = isValid ? '#00e676' : '#ff4444';
             }
+            const saveBtn = container.querySelector('div:last-child button.primary');
+            if (saveBtn) saveBtn.disabled = !isValid;
         };
-        footer.appendChild(btnSave);
 
-        container.appendChild(footer);
-    };
-
-    const updateTotal = () => {
-        const total = localBuckets.reduce((sum, b) => sum + (parseFloat(b.percent) || 0), 0);
-        const isValid = Math.abs(total - 100) < 0.1;
-
-        const totalEl = container.querySelector('strong');
-        if (totalEl) {
-            totalEl.innerHTML = `${total.toFixed(1)}%`;
-            totalEl.style.color = isValid ? '#00e676' : '#ff4444';
-        }
-        const saveBtn = container.querySelector('div:last-child button.primary');
-        if (saveBtn) saveBtn.disabled = !isValid;
-    };
-
-    render();
-}
+        render();
+    }
 };

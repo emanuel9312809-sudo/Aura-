@@ -81,7 +81,7 @@ export const uiPersonal = {
         grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(100px, 1fr))';
         grid.style.gap = '10px';
 
-        const cats = auraState.state.finance.personalCategories || [];
+        // const cats = auraState.state.finance.personalCategories || []; // Already declared above
 
         if (cats.length === 0) {
             grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; opacity:0.6;">Sem categorias. Adiciona nas Definições.</div>';
