@@ -303,11 +303,12 @@ class UIRenderer {
             item.addEventListener('click', (e) => this.switchTab(e.currentTarget.getAttribute('data-tab')));
         });
 
-
-
         // --- History Modal v1.9.8 ---
         const histModal = document.getElementById('history-modal');
-        document.getElementById('btn-close-history').addEventListener('click', () => histModal.classList.remove('open'));
+        const btnCloseHist = document.getElementById('btn-close-history');
+        if (btnCloseHist) {
+            btnCloseHist.addEventListener('click', () => histModal.classList.remove('open'));
+        }
 
         // --- Modal ---
         const modal = document.getElementById('settings-modal');
@@ -550,6 +551,9 @@ class UIRenderer {
 
         // --- Personal View Widgets ---
         // --- Personal View Widgets (Replaced by New UI Module v1.9.1) ---
+        // --- Personal View Widgets ---
+        // --- Personal View Widgets (Replaced by New UI Module v1.9.1) ---
+        const pHeader = document.getElementById('personal-dynamic-header');
         if (pHeader) {
             pHeader.innerHTML = '';
             uiPersonal.renderPersonalHeader(pHeader);
