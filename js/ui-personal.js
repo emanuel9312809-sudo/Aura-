@@ -20,7 +20,53 @@ export const uiPersonal = {
         `;
         container.appendChild(balanceCard);
 
-        // 2. Categories Guide
+        // 2. Orçamento Disponível (v2.7)
+        const budgetContainer = document.createElement('div');
+        budgetContainer.className = 'glass-card';
+        budgetContainer.style.marginBottom = '20px';
+        budgetContainer.style.padding = '15px';
+
+        const bHeader = document.createElement('h4');
+        bHeader.textContent = 'Orçamento Disponível';
+        bHeader.style.marginBottom = '10px';
+        bHeader.style.color = 'var(--text-muted)';
+        budgetContainer.appendChild(bHeader);
+
+        const cats = auraState.state.finance.personalCategories || [];
+        const hasBudget = cats.some(c => c.allocation > 0);
+
+        if (!hasBudget) {
+            budgetContainer.innerHTML += '<div style="opacity:0.6; font-size:0.9rem;">Configure a distribuição nas definições.</div>';
+        } else {
+            const list = document.createElement('div');
+            list.style.display = 'flex';
+            list.style.flexDirection = 'column';
+            list.style.gap = '8px';
+
+            cats.forEach(c => {
+                if (c.allocation > 0) {
+                    const amount = totalBalance * (c.allocation / 100);
+                    const row = document.createElement('div');
+                    row.style.display = 'flex';
+                    row.style.justifyContent = 'space-between';
+                    row.style.alignItems = 'center';
+                    row.style.fontSize = '0.9rem';
+
+                    row.innerHTML = `
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <div style="width:8px; height:8px; border-radius:50%; background:${c.color};"></div>
+                            <span>${c.name} <span style="font-size:0.8rem; color:#666;">(${c.allocation}%)</span></span>
+                        </div>
+                        <span style="font-weight:bold;">${amount.toFixed(2)} €</span>
+                    `;
+                    list.appendChild(row);
+                }
+            });
+            budgetContainer.appendChild(list);
+        }
+        container.appendChild(budgetContainer);
+
+        // 3. Categories Guide
         const catContainer = document.createElement('div');
         catContainer.style.marginBottom = '20px';
 

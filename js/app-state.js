@@ -633,6 +633,19 @@ class AuraState {
         }
     }
 
+    // v2.7: Save Personal Allocations (Budgeting)
+    savePersonalAllocations(updatedCats) {
+        // updatedCats is array of { id, allocation } or full objects
+        // We merge allocation into existing categories
+        updatedCats.forEach(u => {
+            const cat = this.state.finance.personalCategories.find(c => c.id === u.id);
+            if (cat) {
+                cat.allocation = parseFloat(u.allocation) || 0;
+            }
+        });
+        this.saveState();
+    }
+
     // For later: Edit Name/Color
 }
 
