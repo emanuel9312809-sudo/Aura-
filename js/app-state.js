@@ -482,7 +482,8 @@ class AuraState {
         return this.state.finance.buckets.profit + this.state.finance.buckets.investment + this.state.bonusVault.current;
     }
     // --- Personal Finance v1.8.0 ---
-    addPersonalTransaction(type, amount, category, accountId) {
+    // v2.4: Added title and subcategory
+    addPersonalTransaction(type, amount, category, accountId, title, subcategory) {
         amount = parseFloat(amount);
         if (isNaN(amount) || amount <= 0) return;
 
@@ -507,14 +508,18 @@ class AuraState {
             date: new Date().toISOString(),
             type: type, // 'expense' or 'income'
             category: category, // 'Essencial', 'Lazer', 'Investimento' (or null for income)
+            subcategory: subcategory || null, // v2.4
             summary: category || 'Rendimento Pessoal',
+            title: title || (category ? `${category}` : 'Despesa'), // v2.4
             amount: amount,
             accountId: accountId,
             split: null, // No business split
-            description: 'Movimento Pessoal'
+            description: title || 'Movimento Pessoal'
         });
 
         if (this.state.finance.transactions.length > 50) this.state.finance.transactions.pop();
+        // v1.9.1: Add XP for logging
+        this.addXP(5);
         this.saveState();
         console.log(`Personal Transaction: ${type} ${amount}€ (${category}) -> ${acc.name}`);
     }
@@ -559,12 +564,34 @@ class AuraState {
         const newCat = {
             id: 'cat_' + Date.now(),
             name: name,
-            color: color || '#aaaaaa'
+            color: color || '#aaaaaa',
+            subcategories: [] // v2.4
         };
 
         this.state.finance.personalCategories.push(newCat);
         this.saveState();
         console.log(`Category Added: ${name}`);
+    }
+
+    // v2.4: Manage Subcategories
+    addSubcategory(catInd, subName) {
+        // catInd might be string ID.
+        const cat = this.state.finance.personalCategories.find(c => c.id === catInd);
+        if (cat) {
+            if (!cat.subcategories) cat.subcategories = [];
+            cat.subcategories.push(subName);
+            this.saveState();
+        } else {
+            console.error("Category not found for adding sub:", catInd);
+        }
+    }
+
+    removeSubcategory(catInd, subName) {
+        const cat = this.state.finance.personalCategories.find(c => c.id === catInd);
+        if (cat && cat.subcategories) {
+            cat.subcategories = cat.subcategories.filter(s => s !== subName);
+            this.saveState();
+        }
     }
 
     removePersonalCategory(id) {
