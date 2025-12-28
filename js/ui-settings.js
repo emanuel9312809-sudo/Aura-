@@ -7,7 +7,7 @@ export const uiSettings = {
 
         // Header
         const header = document.createElement('h3');
-        header.textContent = 'Categorias Pessoais';
+        header.textContent = 'Gerir Distribuições'; // v2.8 Renamed from Categorias Pessoais
         container.appendChild(header);
 
         // List Container
@@ -119,7 +119,7 @@ export const uiSettings = {
         container.id = 'subcat-manager-container'; // Ensure ID for refresh
 
         const header = document.createElement('h3');
-        header.textContent = 'Gerir Subcategorias';
+        header.textContent = 'Gerir Categorias'; // v2.8 Renamed from Subcategorias
         header.style.marginTop = '30px';
         container.appendChild(header);
 
@@ -132,7 +132,7 @@ export const uiSettings = {
         // 1. Category Selector
         const selContainer = document.createElement('div');
         selContainer.style.marginBottom = '15px';
-        selContainer.innerHTML = `<label style="display:block; color:#aaa; font-size:0.9rem; margin-bottom:5px;">Selecionar Categoria Pai:</label>`;
+        selContainer.innerHTML = `<label style="display:block; color:#aaa; font-size:0.9rem; margin-bottom:5px;">Selecionar Distribuição Pai:</label>`; // v2.8
 
         const select = document.createElement('select');
         select.style.width = '100%';
@@ -184,7 +184,7 @@ export const uiSettings = {
             formDiv.style.display = 'flex';
             formDiv.style.gap = '10px';
             formDiv.innerHTML = `
-                <input type="text" id="new-sub-name" placeholder="Nova subcategoria..." style="flex:1; padding:10px; border-radius:8px; border:1px solid #444; background:#222; color:white;">
+                <input type="text" id="new-sub-name" placeholder="Nova categoria..." style="flex:1; padding:10px; border-radius:8px; border:1px solid #444; background:#222; color:white;">
                 <button class="primary" id="btn-add-sub-ded" style="padding:0 20px; font-size:1.2rem;">+</button>
             `;
             contentArea.appendChild(formDiv);
@@ -200,7 +200,7 @@ export const uiSettings = {
 
             listDiv.querySelectorAll('.btn-del-sub-ded').forEach(btn => {
                 btn.onclick = () => {
-                    if (confirm('Remover subcategoria?')) {
+                    if (confirm('Remover categoria?')) { // v2.8
                         auraState.removeSubcategory(btn.dataset.cat, btn.dataset.sub);
                         this.renderSubcategoryManager(container);
                     }
@@ -211,7 +211,7 @@ export const uiSettings = {
             listDiv.querySelectorAll('.btn-edit-sub-ded').forEach(btn => {
                 btn.onclick = () => {
                     const oldName = btn.dataset.sub;
-                    const newName = prompt('Editar subcategoria:', oldName);
+                    const newName = prompt('Editar categoria:', oldName); // v2.8
                     if (newName && newName !== oldName) {
                         auraState.updateSubcategory(btn.dataset.cat, oldName, newName);
                         this.renderSubcategoryManager(container);

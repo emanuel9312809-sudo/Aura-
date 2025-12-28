@@ -1,13 +1,13 @@
-const CACHE_NAME = 'aura-v1.9.8-history';
+const CACHE_NAME = 'aura-v2.9-fab';
 const FILES_TO_CACHE = [
     './',
     './index.html',
     './manifest.json',
-    './css/styles.css?v=1.9.7',
-    './js/app-state.js?v=1.9.5',
-    './js/ui-render.js?v=1.9.6',
-    './js/ui-settings.js?v=1.9.6',
-    './js/ui-personal.js?v=1.9.1'
+    './css/styles.css?v=2.9',
+    './js/app-state.js?v=2.9',
+    './js/ui-render.js?v=2.9',
+    './js/ui-settings.js?v=2.9',
+    './js/ui-personal.js?v=2.9'
 ];
 
 self.addEventListener('install', (event) => {

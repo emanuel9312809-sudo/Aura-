@@ -45,17 +45,19 @@ class UIRenderer {
                     </div>
                     <div style="margin-top:20px;">
                         <input type="number" id="p-trans-amount" placeholder="Valor (€)" step="0.01" style="width:100%; padding:10px; margin-bottom:15px; border-radius:8px; border:1px solid #333; background:#222; color:white;">
-                        <input type="text" id="p-trans-title" placeholder="Título / Descrição (Obrigatório)" style="width:100%; padding:10px; margin-bottom:15px; border-radius:8px; border:1px solid #333; background:#222; color:white;">
                         
                         <div id="p-trans-cat-container" style="margin-bottom:15px;">
-                             <label style="color:#aaa; font-size:0.8rem;">Categoria</label>
+                             <label style="color:#aaa; font-size:0.8rem;">Distribuição</label>
                              <select id="p-trans-category" style="width:100%; padding:10px; border-radius:8px; border:1px solid #333; background:#222; color:white; margin-bottom:10px;">
                                 <option value="Essencial">Essencial</option>
                              </select>
+                             <label style="color:#aaa; font-size:0.8rem;">Categoria</label>
                              <select id="p-trans-subcategory" style="width:100%; padding:10px; border-radius:8px; border:1px solid #333; background:#222; color:white;">
-                                <option value="">Sem Subcategoria</option>
+                                <option value="">Sem Categoria</option>
                              </select>
                         </div>
+
+                        <input type="text" id="p-trans-title" placeholder="Detalhe / Opcional" style="width:100%; padding:10px; margin-bottom:15px; border-radius:8px; border:1px solid #333; background:#222; color:white;">
 
                         <label style="color:#aaa; font-size:0.8rem;" id="p-trans-acc-label">Conta</label>
                         <select id="p-trans-account" style="width:100%; padding:10px; border-radius:8px; border:1px solid #333; background:#222; color:white; margin-bottom:20px;">
@@ -235,12 +237,19 @@ class UIRenderer {
                     
                     <!-- Bonus Vault Removed v1.8.0 -->
 
-                     <div class="glass-card">
-                          <h3>Ações Rápidas</h3>
-                          <div style="display:flex; gap:10px;">
-                              <button class="primary expense-mode" id="btn-personal-expense" style="font-size:0.9rem;">📉 Despesa</button>
-                              <button class="primary" id="btn-personal-income" style="font-size:0.9rem; background: var(--success-color, #00C853); border:none;">📈 Rendimento</button>
-                          </div>
+                     <!-- v2.9: FAB Action Container (Floating) -->
+                     <div class="fab-container" id="fab-personal-container">
+                        <div class="fab-options">
+                            <button class="fab-btn" id="btn-fab-income">
+                                <span class="fab-label">Rendimento</span>
+                                <div class="fab-icon" style="background:var(--success-color, #00C853);">📈</div>
+                            </button>
+                            <button class="fab-btn" id="btn-fab-expense">
+                                <span class="fab-label">Despesa</span>
+                                <div class="fab-icon" style="background:var(--expense-color);">📉</div>
+                            </button>
+                        </div>
+                        <button class="fab-main" id="btn-fab-main">+</button>
                      </div>
 
                      <!-- v1.9.8: History Preview -->
@@ -384,10 +393,11 @@ class UIRenderer {
                 if (target === 'business') {
                     viewBiz.style.display = 'block';
                     viewPers.style.display = 'none';
-
+                    if (document.getElementById('fab-personal-container')) document.getElementById('fab-personal-container').style.display = 'none'; // v2.9
                 } else {
                     viewBiz.style.display = 'none';
                     viewPers.style.display = 'block';
+                    if (document.getElementById('fab-personal-container')) document.getElementById('fab-personal-container').style.display = 'flex'; // v2.9
                 }
             });
         });
@@ -535,22 +545,46 @@ class UIRenderer {
             });
         }
 
-        document.getElementById('btn-personal-expense').addEventListener('click', () => openPTransModal('expense'));
-        document.getElementById('btn-personal-income').addEventListener('click', () => openPTransModal('income'));
+        // v2.9: FAB Logic
+        const fabContainer = document.getElementById('fab-personal-container');
+        const fabMain = document.getElementById('btn-fab-main');
+
+        fabMain.addEventListener('click', () => {
+            fabContainer.classList.toggle('active');
+            fabMain.classList.toggle('active');
+        });
+
+        document.getElementById('btn-fab-expense').addEventListener('click', () => {
+            openPTransModal('expense');
+            fabContainer.classList.remove('active');
+            fabMain.classList.remove('active');
+        });
+
+        document.getElementById('btn-fab-income').addEventListener('click', () => {
+            openPTransModal('income');
+            fabContainer.classList.remove('active');
+            fabMain.classList.remove('active');
+        });
         document.getElementById('btn-close-trans-modal').addEventListener('click', () => transModal.classList.remove('open'));
 
         document.getElementById('btn-confirm-p-trans').addEventListener('click', () => {
             const amt = pTransAmount.value;
-            const title = pTransTitle.value.trim(); // v2.4
+            let title = pTransTitle.value.trim(); // v2.4
             const accId = pTransAcc.value;
             const cat = currentPTransType === 'expense' ? pTransCat.value : null;
             const sub = currentPTransType === 'expense' ? pTransSub.value : null; // v2.4
 
-            if (amt && accId && title) {
+            // v2.8: Title is now optional (Detail)
+            if (!title) {
+                if (currentPTransType === 'expense') title = sub || cat || 'Despesa';
+                else title = 'Rendimento';
+            }
+
+            if (amt && accId) {
                 auraState.addPersonalTransaction(currentPTransType, amt, cat, accId, title, sub);
                 transModal.classList.remove('open');
             } else {
-                alert('Preencha o valor, título e selecione uma conta.');
+                alert('Preencha o valor e selecione uma conta.');
             }
         });
     }
