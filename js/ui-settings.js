@@ -27,14 +27,15 @@ export const uiSettings = {
             } else {
                 cats.forEach(cat => {
                     const row = document.createElement('div');
-                    row.className = 'glass-card';
-                    row.style.margin = '0';
-                    row.style.padding = '10px 15px';
+                    row.className = 'account-item'; // v2.9 Match other tabs
                     row.style.display = 'flex';
                     row.style.justifyContent = 'space-between';
                     row.style.alignItems = 'center';
+                    row.style.padding = '10px 0'; // Vertical padding only
+                    row.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
 
                     row.innerHTML = `
+                        <div style="display:flex; align-items:center; gap:10px;">
                             <div style="width:20px; height:20px; border-radius:50%; background-color:${cat.color}; border:1px solid rgba(255,255,255,0.3);"></div>
                             <span style="font-size:1rem;">${cat.name}</span>
                         </div>
@@ -70,9 +71,9 @@ export const uiSettings = {
 
         // Add New Form (Styled Footer)
         const footer = document.createElement('div');
-        footer.style.marginTop = '20px';
+        footer.style.marginTop = '10px'; // v2.9 Match Accounts
         footer.style.borderTop = '1px solid rgba(255,255,255,0.1)';
-        footer.style.paddingTop = '15px';
+        footer.style.paddingTop = '10px';
         footer.innerHTML = `
             <div style="display:flex; gap:10px; align-items:center;">
                 <input type="color" id="new-cat-color" value="#a358df" style="width:50px; height:40px; border:none; padding:0; background:none; cursor:pointer;">
