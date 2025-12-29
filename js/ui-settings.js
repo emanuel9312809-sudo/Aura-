@@ -46,7 +46,7 @@ export const uiSettings = {
 
                     // v2.5: Edit Logic
                     row.querySelector('.btn-edit-cat').onclick = () => {
-                        const newName = prompt('Editar nome da categoria:', cat.name);
+                        const newName = prompt('Editar nome da Distribuição:', cat.name);
                         // Ideally color too, but keep simple
                         if (newName) {
                             auraState.updatePersonalCategory(cat.id, newName, null);
@@ -76,7 +76,7 @@ export const uiSettings = {
         footer.innerHTML = `
             <div style="display:flex; gap:10px; align-items:center;">
                 <input type="color" id="new-cat-color" value="#a358df" style="width:50px; height:40px; border:none; padding:0; background:none; cursor:pointer;">
-                <input type="text" id="new-cat-name" placeholder="Nova Categoria..." style="flex:1;">
+                <input type="text" id="new-cat-name" placeholder="Nova Distribuição..." style="flex:1;">
                 <button class="primary" id="btn-add-cat" style="width:40px; font-size:1.2rem;">+</button>
             </div>
         `;
@@ -237,7 +237,7 @@ export const uiSettings = {
         let cats = JSON.parse(JSON.stringify(auraState.state.finance.personalCategories || []));
 
         const render = () => {
-            container.innerHTML = '<h3>Orçamento Pessoal (%)</h3>';
+            container.innerHTML = '<h3>Distribuição do Orçamento (%)</h3>';
 
             const total = cats.reduce((sum, c) => sum + (parseFloat(c.allocation) || 0), 0);
             const isValid = Math.abs(total - 100) < 0.1;

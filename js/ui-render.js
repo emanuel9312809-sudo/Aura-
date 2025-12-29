@@ -2,6 +2,7 @@
  * AURA - UI Render Engine v1.6.5 (Refinements & Radar)
  */
 import { auraState } from './app-state.js';
+import { uiBusiness } from './ui-business.js';
 import { uiSettings } from './ui-settings.js';
 import { uiPersonal } from './ui-personal.js';
 
@@ -402,42 +403,18 @@ class UIRenderer {
             });
         });
 
-        // --- Finance Actions ---
-        const btnIncome = document.getElementById('btn-mode-income');
-        const btnExpense = document.getElementById('btn-mode-expense');
-        const submitBtn = document.getElementById('btn-submit-transaction');
-        const expenseContainer = document.getElementById('expense-category-container');
-        const lblAcc = document.getElementById('lbl-acc-select');
-
-        const setMode = (mode) => {
-            this.transactionMode = mode;
-            if (mode === 'income') {
-                btnIncome.classList.add('active');
-                btnExpense.classList.remove('active');
-                expenseContainer.style.display = 'none';
-                submitBtn.textContent = 'Registar Venda';
-                submitBtn.classList.remove('expense-mode');
-                lblAcc.textContent = 'Destino';
-            } else {
-                btnExpense.classList.add('active');
-                btnIncome.classList.remove('active');
-                expenseContainer.style.display = 'block';
-                submitBtn.textContent = 'Registar Despesa';
-                submitBtn.classList.add('expense-mode');
-                lblAcc.textContent = 'Origem';
-            }
-        };
-        btnIncome.addEventListener('click', () => setMode('income'));
-        btnExpense.addEventListener('click', () => setMode('expense'));
-
-        submitBtn.addEventListener('click', () => {
-            const amt = document.getElementById('input-transaction-amount').value;
-            const accId = document.getElementById('select-account-transaction').value;
-            if (!amt || !accId) { alert('Verifique valor e conta.'); return; }
-            if (this.transactionMode === 'income') auraState.processIncome(amt, accId);
-            else auraState.processExpense(amt, document.getElementById('select-expense-bucket').value, accId);
-            document.getElementById('input-transaction-amount').value = '';
-        });
+        // --- Finance Actions (Business) ---
+        // v2.9.3: Logic moved to ui-business.js
+        if (typeof uiBusiness !== 'undefined') {
+            uiBusiness.init();
+        } else {
+            // Fallback if not loaded globally, or use dynamic import if needed, 
+            // but since we will add script tag with module type, we can import it.
+            // However, to avoid large diffs, I'll just skip the logic here and assume index.html loads it or I add import at top.
+            // BETTER: I will add `import { uiBusiness } from './ui-business.js';` at top of file in next step.
+            // For now, I will just call it assuming I'll fix imports.
+            uiBusiness.init();
+        }
 
         // ADD ACCOUNT v1.6.5
         document.getElementById('btn-add-acc').addEventListener('click', () => {

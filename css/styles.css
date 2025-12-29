@@ -611,3 +611,18 @@ button.primary.expense-mode {
   width: 0%;
   transition: width 1s ease;
 }
+/* FAB Styles v2.9.1 Fixed */
+.fab-container { position: fixed; bottom: 100px; right: 20px; z-index: 2000; display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 10px; pointer-events: none; }
+.fab-main { pointer-events: auto; width: 56px; height: 56px; border-radius: 50%; background: var(--accent-color); color: #121212; font-size: 24px; border: none; box-shadow: 0 4px 12px rgba(0, 212, 255, 0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.fab-main.active { transform: rotate(45deg); background: #ff4444; color: white; }
+.fab-options { display: flex; flex-direction: column; gap: 10px; opacity: 0; pointer-events: none; transform: translateY(10px); transition: all 0.2s ease; }
+.fab-container.active .fab-options { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.fab-btn { display: flex; align-items: center; gap: 10px; background: none; border: none; cursor: pointer; pointer-events: auto; }
+.fab-label { background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+.fab-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+
+/* Donut Chart Animation */
+@keyframes progress { from { stroke-dasharray: 0 100; } }
+.chart-circle { transition: all 0.5s ease; animation: progress 1s ease-out forwards; }
+.chart-legend-item { display:flex; align-items:center; justify-content:space-between; padding:8px; border-bottom:1px solid rgba(255,255,255,0.05); }
+.chart-legend-item:last-child { border-bottom:none; }

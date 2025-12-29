@@ -23,9 +23,10 @@
     <button id="update-btn">Nova versão disponível</button>
 
     <!-- Scripts Modulares -->
+    <script type="module" src="js/app-state.js"></script>
+    <script type="module" src="js/ui-business.js"></script>
+    <script type="module" src="js/ui-render.js?v=1.9.6"></script>
     <script type="module">
-        import { uiRenderer } from './js/ui-render.js?v=1.9.6';
-
         // Registo do Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

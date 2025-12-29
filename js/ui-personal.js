@@ -38,31 +38,103 @@ export const uiPersonal = {
         if (!hasBudget) {
             budgetContainer.innerHTML += '<div style="opacity:0.6; font-size:0.9rem;">Configure a distribuição nas definições.</div>';
         } else {
-            const list = document.createElement('div');
-            list.style.display = 'flex';
-            list.style.flexDirection = 'column';
-            list.style.gap = '8px';
+            // Container Flex: Chart | Legend
+            const flexBox = document.createElement('div');
+            flexBox.style.display = 'flex';
+            flexBox.style.flexDirection = 'row'; // Side by side
+            flexBox.style.alignItems = 'center';
+            flexBox.style.gap = '20px';
 
-            cats.forEach(c => {
+            // 1. Canvas
+            const canvasWrapper = document.createElement('div');
+            canvasWrapper.style.position = 'relative';
+            canvasWrapper.style.width = '120px';
+            canvasWrapper.style.height = '120px';
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 240; // Retina
+            canvas.height = 240;
+            canvas.style.width = '120px';
+            canvas.style.height = '120px';
+            canvasWrapper.appendChild(canvas);
+            flexBox.appendChild(canvasWrapper);
+
+            // 2. Legend
+            const legend = document.createElement('div');
+            legend.style.flex = '1';
+            legend.style.display = 'flex';
+            legend.style.flexDirection = 'column';
+            legend.style.gap = '6px';
+
+            let currentAngle = -0.5 * Math.PI; // Start top
+            const ctx = canvas.getContext('2d');
+            const centerX = 120;
+            const centerY = 120;
+            const outerRadius = 110;
+            const innerRadius = 80;
+
+            // Sort by amount desc for aesthetics
+            cats.sort((a, b) => b.allocation - a.allocation);
+
+            let totalAllocatedMoney = 0;
+
+            cats.forEach((c, index) => {
                 if (c.allocation > 0) {
                     const amount = totalBalance * (c.allocation / 100);
+                    totalAllocatedMoney += amount;
+
+                    // A. Draw Chart Segment
+                    const sliceAngle = (c.allocation / 100) * 2 * Math.PI;
+                    const endAngle = currentAngle + sliceAngle;
+
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, outerRadius, currentAngle, endAngle);
+                    ctx.arc(centerX, centerY, innerRadius, endAngle, currentAngle, true);
+                    ctx.closePath();
+                    ctx.fillStyle = c.color;
+                    ctx.fill();
+
+                    // Optional: White Border separator
+                    ctx.strokeStyle = '#222';
+                    ctx.lineWidth = 4;
+                    ctx.stroke();
+
+                    // B. Draw Legend Item
                     const row = document.createElement('div');
                     row.style.display = 'flex';
                     row.style.justifyContent = 'space-between';
                     row.style.alignItems = 'center';
-                    row.style.fontSize = '0.9rem';
+                    row.style.fontSize = '0.85rem';
 
                     row.innerHTML = `
-                        <div style="display:flex; align-items:center; gap:8px;">
+                        <div style="display:flex; align-items:center; gap:6px;">
                             <div style="width:8px; height:8px; border-radius:50%; background:${c.color};"></div>
-                            <span>${c.name} <span style="font-size:0.8rem; color:#666;">(${c.allocation}%)</span></span>
+                            <span style="color:#ddd;">${c.name}</span>
                         </div>
-                        <span style="font-weight:bold;">${amount.toFixed(2)} €</span>
+                        <span style="font-weight:bold; color:white;">${amount.toFixed(0)}€</span>
                     `;
-                    list.appendChild(row);
+                    legend.appendChild(row);
+
+                    // Update Angle
+                    currentAngle = endAngle;
                 }
             });
-            budgetContainer.appendChild(list);
+
+            // Center Text
+            const centerLabel = document.createElement('div');
+            centerLabel.style.position = 'absolute';
+            centerLabel.style.top = '50%';
+            centerLabel.style.left = '50%';
+            centerLabel.style.transform = 'translate(-50%, -50%)';
+            centerLabel.style.textAlign = 'center';
+            centerLabel.innerHTML = `
+                <div style="font-size:0.7rem; color:#aaa;">Total</div>
+                <div style="font-weight:bold; font-size:0.9rem;">${totalAllocatedMoney.toFixed(0)}€</div>
+            `;
+            canvasWrapper.appendChild(centerLabel);
+
+            flexBox.appendChild(legend);
+            budgetContainer.appendChild(flexBox);
         }
         container.appendChild(budgetContainer);
 
