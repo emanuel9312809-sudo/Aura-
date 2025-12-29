@@ -46,6 +46,8 @@ class AuraState {
                     { id: 'tax', name: 'Impostos', percent: 15, balance: 0 },
                     { id: 'invest', name: 'Investimento', percent: 5, balance: 0 }
                 ],
+                // v2.11: Inventory
+                inventory: [],
                 // v1.9.1: Dynamic Personal Categories
                 personalCategories: [
                     { id: 'cat_essential', name: 'Essencial', color: '#ff4444' }, // Red
@@ -109,6 +111,8 @@ class AuraState {
                         accounts: Array.isArray(parsed.finance?.accounts) ? parsed.finance.accounts : this.defaultState.finance.accounts,
                         // v1.9.5: Merge businessBuckets
                         businessBuckets: Array.isArray(parsed.finance?.businessBuckets) ? parsed.finance.businessBuckets : this.defaultState.finance.businessBuckets,
+                        // v2.11: Inventory Merge
+                        inventory: Array.isArray(parsed.finance?.inventory) ? parsed.finance.inventory : [],
                         // Legacy support: If loading old state without buckets, rely on default
                         // If user had buckets (v1.9.5), use them.
                         templates: Array.isArray(parsed.finance?.templates) ? parsed.finance.templates : []
@@ -646,7 +650,34 @@ class AuraState {
         this.saveState();
     }
 
-    // For later: Edit Name/Color
+    // --- Inventory Management v2.11 ---
+    addInventoryItem(name, cost, price, stock) {
+        if (!this.state.finance.inventory) this.state.finance.inventory = [];
+
+        this.state.finance.inventory.push({
+            id: Date.now(),
+            name: name,
+            cost: parseFloat(cost),
+            price: parseFloat(price),
+            stock: parseInt(stock)
+        });
+        this.saveState();
+        console.log(`Inventory Added: ${name}`);
+    }
+
+    deleteInventoryItem(id) {
+        if (!this.state.finance.inventory) return;
+        this.state.finance.inventory = this.state.finance.inventory.filter(i => i.id !== id);
+        this.saveState();
+    }
+
+    updateInventoryStock(id, newStock) {
+        const item = this.state.finance.inventory.find(i => i.id === id);
+        if (item) {
+            item.stock = parseInt(newStock);
+            this.saveState();
+        }
+    }
 }
 
 export const auraState = new AuraState();

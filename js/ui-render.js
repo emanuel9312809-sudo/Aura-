@@ -6,6 +6,44 @@ import { uiBusiness } from './ui-business.js';
 import { uiSettings } from './ui-settings.js';
 import { uiPersonal } from './ui-personal.js';
 
+// --- Navigation Manager v2.12 ---
+class NavigationManager {
+    constructor() {
+        this.historyStack = [];
+
+        // Listen for Back Button
+        window.addEventListener('popstate', (e) => {
+            if (this.historyStack.length > 0) {
+                const lastItem = this.historyStack.pop();
+                if (lastItem && typeof lastItem.closeFn === 'function') {
+                    console.log('Nav: Closing modal via Back Button', lastItem.id);
+                    lastItem.closeFn(); // Execute the close logic
+                }
+            } else {
+                console.log('Nav: Root reached.');
+                // Default browser behavior (exit/previous page) if stack is empty
+            }
+        });
+    }
+
+    pushModal(id, closeFn) {
+        // Add a dummy state to history so Back Button triggers popstate
+        history.pushState({ modal: id }, '', `#${id}`);
+        this.historyStack.push({ id, closeFn });
+        console.log('Nav: Modal Pushed', id);
+    }
+
+    // Call this if closed manually (X button) to keep history clean
+    popModal() {
+        if (this.historyStack.length > 0) {
+            this.historyStack.pop();
+            history.back(); // Remove the URL hash/state
+        }
+    }
+}
+
+const navManager = new NavigationManager();
+
 class UIRenderer {
     constructor() {
         this.appElement = document.getElementById('app');
@@ -213,6 +251,9 @@ class UIRenderer {
                         <button class="primary" id="btn-submit-transaction" style="margin-top: 15px;">Registar</button>
                      </div>
                      
+                     <!-- v2.11: Inventory Placeholder -->
+                     <div id="business-inventory-container"></div>
+                     
                      <div class="glass-card">
                         <h2>Últimos Movimentos</h2>
                         <div id="transactions-list"></div>
@@ -315,23 +356,27 @@ class UIRenderer {
             item.addEventListener('click', (e) => this.switchTab(e.currentTarget.getAttribute('data-tab')));
         });
 
-        // --- History Modal v1.9.8 ---
         const histModal = document.getElementById('history-modal');
         const btnCloseHist = document.getElementById('btn-close-history');
         if (btnCloseHist) {
-            btnCloseHist.addEventListener('click', () => histModal.classList.remove('open'));
+            btnCloseHist.addEventListener('click', () => navManager.popModal()); // v2.12 Nav
         }
 
         // --- Modal ---
         const modal = document.getElementById('settings-modal');
         document.getElementById('btn-open-settings').addEventListener('click', () => {
             modal.classList.add('open');
+            navManager.pushModal('settings', () => modal.classList.remove('open')); // v2.12 Nav
             if (uiSettings) {
                 uiSettings.renderCategoryManager(document.getElementById('settings-cats-container'));
                 uiSettings.renderDistributionSettings(document.getElementById('settings-distribution-container'));
             }
         });
-        document.getElementById('btn-close-modal').addEventListener('click', () => modal.classList.remove('open'));
+        document.getElementById('btn-close-modal').addEventListener('click', () => {
+            // v2.12: Use manager to pop history (which triggers close)
+            // If user clicks X, we go back in history.
+            navManager.popModal();
+        });
 
         // v2.5: Event Delegation for Settings Modal (Fixes broken listeners)
         modal.addEventListener('click', (e) => {
@@ -474,6 +519,7 @@ class UIRenderer {
         const openPTransModal = (type) => {
             currentPTransType = type;
             transModal.classList.add('open');
+            navManager.pushModal('transaction', () => transModal.classList.remove('open')); // v2.12 Nav
             pTransAmount.value = '';
             pTransTitle.value = ''; // v2.4: Reset Title
 
@@ -542,7 +588,7 @@ class UIRenderer {
             fabContainer.classList.remove('active');
             fabMain.classList.remove('active');
         });
-        document.getElementById('btn-close-trans-modal').addEventListener('click', () => transModal.classList.remove('open'));
+        document.getElementById('btn-close-trans-modal').addEventListener('click', () => navManager.popModal()); // v2.12
 
         document.getElementById('btn-confirm-p-trans').addEventListener('click', () => {
             const amt = pTransAmount.value;
@@ -559,7 +605,7 @@ class UIRenderer {
 
             if (amt && accId) {
                 auraState.addPersonalTransaction(currentPTransType, amt, cat, accId, title, sub);
-                transModal.classList.remove('open');
+                navManager.popModal(); // v2.12: Close & Sync History
             } else {
                 alert('Preencha o valor e selecione uma conta.');
             }
@@ -862,7 +908,10 @@ class UIRenderer {
             });
         }
 
+
+
         modal.classList.add('open');
+        navManager.pushModal('history', () => modal.classList.remove('open')); // v2.12 Nav
     }
 }
 
