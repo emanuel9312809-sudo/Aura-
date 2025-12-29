@@ -867,3 +867,15 @@ class UIRenderer {
 }
 
 export const uiRenderer = new UIRenderer();
+
+// Auto-Init logic to start the app
+// Safe to run if DOM is already loaded, or wait for it.
+// Since modules are deferred by default, DOM is usually ready.
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => uiRenderer.init());
+} else {
+    uiRenderer.init();
+}
+
+// Expose to window for index.html inline scripts (Service Worker)
+window.uiRenderer = uiRenderer;
