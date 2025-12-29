@@ -162,7 +162,7 @@ class UIRenderer {
                             </div>
                             </div>
                         </div>
-                    </div>
+
 
                     <!-- TAB CATEGORIAS v1.9.1 -->
                     <div id="tab-cats" class="modal-tab-content">

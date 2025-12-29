@@ -1,12 +1,12 @@
-const CACHE_NAME = 'aura-v2.12-back-nav';
+const CACHE_NAME = 'aura-v2.13-ui-fix-cats';
 const FILES_TO_CACHE = [
     './',
     './index.html',
     './manifest.json',
     './css/styles.css?v=2.9.1',
     './js/app-state.js?v=2.11',
-    './js/ui-render.js?v=2.12',
-    './js/ui-settings.js?v=2.9.2',
+    './js/ui-render.js?v=2.13',
+    './js/ui-settings.js?v=2.13',
     './js/ui-personal.js?v=2.10',
     './js/ui-business.js?v=2.11'
 ];

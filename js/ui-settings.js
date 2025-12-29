@@ -2,6 +2,7 @@ import { auraState } from './app-state.js';
 
 export const uiSettings = {
     renderCategoryManager(container) {
+        console.log('UI Settings: Render Category Manager', container);
         if (!container) return;
         container.innerHTML = ''; // Fix Duplication v1.9.6
 
@@ -167,7 +168,7 @@ export const uiSettings = {
 
             if (cat.subcategories && cat.subcategories.length > 0) {
                 listDiv.innerHTML = cat.subcategories.map(s => `
-                    <div class="glass-card" style="padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+                    <div class="account-item" style="padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center;">
                         <span>${s}</span>
                         <div style="display:flex; gap:10px;">
                             <button class="btn-edit-sub-ded" data-cat="${catId}" data-sub="${s}" style="color:#aaa; background:none; border:none; cursor:pointer;">✏️</button>
@@ -251,8 +252,9 @@ export const uiSettings = {
 
             cats.forEach((c, index) => {
                 const row = document.createElement('div');
-                row.className = 'glass-card';
-                row.style.padding = '10px';
+                row.className = 'account-item';
+                row.style.padding = '10px 0';
+                row.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
                 row.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
                         <span>${c.name}</span>
