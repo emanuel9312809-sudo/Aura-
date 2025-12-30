@@ -319,27 +319,39 @@ export const uiPersonal = {
                     </div>
                 `;
 
-                // Click to Manage (Simple Prompt for MVP)
-                card.onclick = () => {
-                    const action = prompt(`Gerir Meta: ${g.name}\n1. Depositar\n2. Levantar\n3. Apagar\n\nEscolha (1-3):`);
+                // Click to Manage
+                card.onclick = async () => {
+                    // Use a simple prompt for action selection first (or custom modal with buttons?)
+                    // For MVP v2.14.1, let's use the InputModal for values, but maybe a simple native confirm/prompt for action selection is okay?
+                    // User complained about "emanuel... says". That happens on prompt().
+                    // Let's replace the Action Selection with a simple confirm/alert approach or just 3 buttons?
+                    // Simplest fix: Direct prompt for "Depositar" if clicking card?
+                    // Or ask "O que queres fazer?"
+                    // Let's implement a 'showActionSheet' is too complex.
+                    // Let's stick to prompt for Action but maybe that's the issue?
+                    // Wait, the user said "pede pra eu preencher um valor". That's the value prompt.
+                    // The action prompt "Gerir Meta... 1. Depositar" is also a prompt.
+                    // FIX: Use a custom simple selection logic or assume Click = Deposit.
+                    // Improved UX: Click = Deposit/Details. Long Press = Edit?
+                    // Let's simple: Ask "Depositar (1) ou Levantar (2) ou Apagar (3)?"
+
+                    const action = await uiRenderer.showInputModal('Gerir Meta', '1: Depositar, 2: Levantar, 3: Apagar', 'number', '1');
+
                     if (action === '1') {
-                        const val = prompt('Valor a depositar (€):');
+                        const val = await uiRenderer.showInputModal('Depositar', 'Quanto queres guardar? (€)', 'number');
                         if (val) {
-                            if (auraState.updateGoalProgress(g.id, val)) this.renderGoals(container); // Re-render logic needed, or full updateUI
-                            // Ideally, we trigger a full UI update, but local re-render might duplicate.
-                            // Better: Trigger updateUI via custom event or direct call if available.
-                            // For now: Reload UI loop or hack refresh.
-                            // Let's use a Custom Event to trigger main update
-                            document.dispatchEvent(new Event('state-change'));
+                            if (auraState.updateGoalProgress(g.id, val)) {
+                                document.dispatchEvent(new Event('state-change'));
+                            }
                         }
                     } else if (action === '2') {
-                        const val = prompt('Valor a levantar (€):');
+                        const val = await uiRenderer.showInputModal('Levantar', 'Quanto precisas? (€)', 'number');
                         if (val) {
                             auraState.updateGoalProgress(g.id, -Math.abs(val));
                             document.dispatchEvent(new Event('state-change'));
                         }
                     } else if (action === '3') {
-                        if (confirm('Apagar esta meta?')) {
+                        if (confirm('Tens a certeza que queres apagar?')) {
                             auraState.deleteGoal(g.id);
                             document.dispatchEvent(new Event('state-change'));
                         }
@@ -351,12 +363,12 @@ export const uiPersonal = {
         }
 
         // Add Logic
-        goalsDiv.querySelector('#btn-add-goal').onclick = () => {
-            const name = prompt('Nome da Meta (ex: Férias):');
+        goalsDiv.querySelector('#btn-add-goal').onclick = async () => {
+            const name = await uiRenderer.showInputModal('Nova Meta', 'Qual é o teu objetivo?');
             if (!name) return;
-            const target = prompt('Valor Alvo (€):');
+            const target = await uiRenderer.showInputModal('Valor Alvo', 'Quanto precisas juntar? (€)', 'number');
             if (!target) return;
-            // Optional: Icon/Color picker prompts can be skipped for MVP defaults
+
             auraState.addGoal(name, target);
             document.dispatchEvent(new Event('state-change'));
         };

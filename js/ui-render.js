@@ -55,6 +55,62 @@ class UIRenderer {
         this.init();
     }
 
+    // v2.14: Generic Custom Prompt
+    showInputModal(title, msg, type = 'text', defaultValue = '') {
+        return new Promise((resolve) => {
+            let modal = document.getElementById('aura-input-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'aura-input-modal';
+                modal.className = 'modal-overlay';
+                modal.style.zIndex = '9999';
+                modal.innerHTML = `
+                    <div class="glass-card" style="width:90%; max-width:320px; padding:20px; text-align:center; background:#1e1e1e; border:1px solid rgba(255,255,255,0.1);">
+                        <h3 id="aim-title" style="margin-bottom:10px;">Title</h3>
+                        <p id="aim-msg" style="margin-bottom:15px; color:#ccc; font-size:0.9rem;">Message</p>
+                        <input id="aim-input" style="width:100%; padding:10px; border-radius:8px; border:1px solid #444; background:#111; color:white; margin-bottom:20px;">
+                        <div style="display:flex; justify-content:space-between; gap:10px;">
+                            <button id="aim-cancel" style="flex:1; padding:10px; background:none; border:1px solid #555; color:#aaa; border-radius:8px; cursor:pointer;">Cancelar</button>
+                            <button id="aim-confirm" style="flex:1; padding:10px; background:var(--accent-color); border:none; color:#121212; font-weight:bold; border-radius:8px; cursor:pointer;">Confirmar</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+
+            const titleEl = modal.querySelector('#aim-title');
+            const msgEl = modal.querySelector('#aim-msg');
+            const inputEl = modal.querySelector('#aim-input');
+            const btnCancel = modal.querySelector('#aim-cancel');
+            const btnConfirm = modal.querySelector('#aim-confirm');
+
+            titleEl.textContent = title;
+            msgEl.textContent = msg;
+            inputEl.type = type;
+            inputEl.value = defaultValue;
+            inputEl.placeholder = ''; // Reset
+
+            modal.style.display = 'flex';
+            inputEl.focus();
+
+            const close = (val) => {
+                modal.style.display = 'none';
+                btnConfirm.onclick = null;
+                btnCancel.onclick = null;
+                inputEl.onkeyup = null;
+                resolve(val);
+            };
+
+            btnConfirm.onclick = () => close(inputEl.value);
+            btnConfirm.style.background = 'var(--accent-color)'; // Reset visual state
+            btnCancel.onclick = () => close(null);
+
+            inputEl.onkeyup = (e) => {
+                if (e.key === 'Enter') close(inputEl.value);
+            };
+        });
+    }
+
     init() {
         console.log("System Recovered");
         this.renderStructure();
