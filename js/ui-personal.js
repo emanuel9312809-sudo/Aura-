@@ -330,27 +330,26 @@ export const uiPersonal = {
                     // Let's implement a 'showActionSheet' is too complex.
                     // Let's stick to prompt for Action but maybe that's the issue?
                     // Wait, the user said "pede pra eu preencher um valor". That's the value prompt.
-                    // The action prompt "Gerir Meta... 1. Depositar" is also a prompt.
-                    // FIX: Use a custom simple selection logic or assume Click = Deposit.
-                    // Improved UX: Click = Deposit/Details. Long Press = Edit?
-                    // Let's simple: Ask "Depositar (1) ou Levantar (2) ou Apagar (3)?"
+                    const action = await uiRenderer.showOptionsModal(`Gerir: ${g.name}`, [
+                        { label: '📥 Depositar', value: 'deposit', class: 'primary' },
+                        { label: '📤 Levantar', value: 'withdraw', class: 'default' },
+                        { label: '🗑️ Apagar', value: 'delete', class: 'danger' }
+                    ]);
 
-                    const action = await uiRenderer.showInputModal('Gerir Meta', '1: Depositar, 2: Levantar, 3: Apagar', 'number', '1');
-
-                    if (action === '1') {
+                    if (action === 'deposit') {
                         const val = await uiRenderer.showInputModal('Depositar', 'Quanto queres guardar? (€)', 'number');
                         if (val) {
                             if (auraState.updateGoalProgress(g.id, val)) {
                                 document.dispatchEvent(new Event('state-change'));
                             }
                         }
-                    } else if (action === '2') {
+                    } else if (action === 'withdraw') {
                         const val = await uiRenderer.showInputModal('Levantar', 'Quanto precisas? (€)', 'number');
                         if (val) {
                             auraState.updateGoalProgress(g.id, -Math.abs(val));
                             document.dispatchEvent(new Event('state-change'));
                         }
-                    } else if (action === '3') {
+                    } else if (action === 'delete') {
                         if (confirm('Tens a certeza que queres apagar?')) {
                             auraState.deleteGoal(g.id);
                             document.dispatchEvent(new Event('state-change'));

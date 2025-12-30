@@ -111,6 +111,70 @@ class UIRenderer {
         });
     }
 
+    // v2.14.2: Generic Options Modal (Action Sheet style)
+    showOptionsModal(title, options) {
+        // options: [{ label: 'Depositar', value: 'deposit', class: 'primary' }, ...]
+        return new Promise((resolve) => {
+            let modal = document.getElementById('aura-options-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'aura-options-modal';
+                modal.className = 'modal-overlay';
+                modal.style.zIndex = '9999';
+                modal.innerHTML = `
+                    <div class="glass-card" style="width:90%; max-width:320px; padding:20px; text-align:center; background:#1e1e1e; border:1px solid rgba(255,255,255,0.1);">
+                        <h3 id="aom-title" style="margin-bottom:20px;">Title</h3>
+                        <div id="aom-buttons" style="display:flex; flex-direction:column; gap:10px;"></div>
+                        <button id="aom-cancel" style="margin-top:15px; width:100%; padding:10px; background:none; border:none; color:#aaa; cursor:pointer;">Cancelar</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+
+            const titleEl = modal.querySelector('#aom-title');
+            const buttonsDiv = modal.querySelector('#aom-buttons');
+            const btnCancel = modal.querySelector('#aom-cancel');
+
+            titleEl.textContent = title;
+            buttonsDiv.innerHTML = '';
+
+            modal.style.display = 'flex';
+
+            const close = (val) => {
+                modal.style.display = 'none';
+                resolve(val);
+            };
+
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.textContent = opt.label;
+                btn.style.padding = '12px';
+                btn.style.borderRadius = '8px';
+                btn.style.border = 'none';
+                btn.style.cursor = 'pointer';
+                btn.style.fontWeight = 'bold';
+                btn.style.width = '100%';
+
+                if (opt.class === 'primary') {
+                    btn.style.background = 'var(--accent-color)';
+                    btn.style.color = '#121212';
+                } else if (opt.class === 'danger') {
+                    btn.style.background = 'rgba(255, 68, 68, 0.2)';
+                    btn.style.color = '#ff4444';
+                    btn.style.border = '1px solid #ff4444';
+                } else {
+                    btn.style.background = '#333';
+                    btn.style.color = 'white';
+                }
+
+                btn.onclick = () => close(opt.value);
+                buttonsDiv.appendChild(btn);
+            });
+
+            btnCancel.onclick = () => close(null);
+        });
+    }
+
     init() {
         console.log("System Recovered");
         this.renderStructure();
