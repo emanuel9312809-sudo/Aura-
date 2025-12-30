@@ -54,7 +54,9 @@ class AuraState {
                     { id: 'cat_leisure', name: 'Lazer', color: '#4444ff' },     // Blue
                     { id: 'cat_invest', name: 'Investimento', color: '#44ff44' } // Green
                 ],
-                templates: []
+                templates: [],
+                // v2.14: Savings Goals
+                goals: []
             },
             health: {
                 water: 0,
@@ -597,6 +599,41 @@ class AuraState {
         } else {
             console.error("Category not found for adding sub:", catInd);
         }
+    }
+
+    // v2.14: Savings Goals Management
+    addGoal(name, target, icon, color) {
+        if (!name || !target) return;
+        if (!this.state.finance.goals) this.state.finance.goals = [];
+
+        this.state.finance.goals.push({
+            id: 'goal_' + Date.now(),
+            name: name,
+            target: parseFloat(target),
+            current: 0,
+            icon: icon || '🎯',
+            color: color || '#00e676',
+            deadline: null // Optional future
+        });
+        this.saveState();
+        console.log(`Goal Added: ${name}`);
+    }
+
+    deleteGoal(id) {
+        if (!this.state.finance.goals) return;
+        this.state.finance.goals = this.state.finance.goals.filter(g => g.id !== id);
+        this.saveState();
+    }
+
+    updateGoalProgress(id, amount) {
+        const goal = (this.state.finance.goals || []).find(g => g.id === id);
+        if (goal) {
+            goal.current = (goal.current || 0) + parseFloat(amount);
+            if (goal.current < 0) goal.current = 0;
+            this.saveState();
+            return true;
+        }
+        return false;
     }
 
     // v2.5: Update Subcategory

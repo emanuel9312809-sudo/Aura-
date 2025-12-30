@@ -257,5 +257,108 @@ export const uiPersonal = {
             });
         }
         container.appendChild(list);
+    },
+
+    // v2.14: Metas de Poupança
+    renderGoals(container) {
+        if (!container) return;
+
+        const goalsDiv = document.createElement('div');
+        goalsDiv.className = 'glass-card';
+        goalsDiv.style.marginBottom = '20px';
+        goalsDiv.style.padding = '15px';
+        container.appendChild(goalsDiv);
+
+        // Header
+        const header = document.createElement('div');
+        header.style.display = 'flex';
+        header.style.justifyContent = 'space-between';
+        header.style.alignItems = 'center';
+        header.style.marginBottom = '15px';
+        header.innerHTML = `
+            <h4 style="margin:0; color:var(--text-muted);">Metas de Poupança</h4>
+            <button id="btn-add-goal" style="background:none; border:1px solid var(--accent-color); color:var(--accent-color); padding:4px 10px; border-radius:12px; font-size:0.8rem;">+ Nova Meta</button>
+        `;
+        goalsDiv.appendChild(header);
+
+        // Goals List (Horizontal Scroll)
+        const scrollDiv = document.createElement('div');
+        scrollDiv.style.display = 'flex';
+        scrollDiv.style.gap = '12px';
+        scrollDiv.style.overflowX = 'auto';
+        scrollDiv.style.paddingBottom = '10px';
+        goalsDiv.appendChild(scrollDiv);
+
+        const goals = auraState.state.finance.goals || [];
+
+        if (goals.length === 0) {
+            scrollDiv.innerHTML = '<div style="width:100%; text-align:center; opacity:0.5; padding:20px; font-size:0.9rem;">Define um objetivo (ex: Férias, Carro).</div>';
+        } else {
+            goals.forEach(g => {
+                const percent = Math.min(100, (g.current / g.target) * 100);
+                const card = document.createElement('div');
+                card.style.minWidth = '140px';
+                card.style.background = 'rgba(255,255,255,0.05)';
+                card.style.borderRadius = '12px';
+                card.style.padding = '12px';
+                card.style.display = 'flex';
+                card.style.flexDirection = 'column';
+                card.style.gap = '8px';
+                card.style.cursor = 'pointer';
+                card.style.border = '1px solid rgba(255,255,255,0.05)';
+
+                card.innerHTML = `
+                    <div style="font-size:1.5rem;">${g.icon}</div>
+                    <div style="font-weight:bold; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${g.name}</div>
+                    <div style="width:100%; height:8px; background:#222; border-radius:4px; overflow:hidden;">
+                        <div style="width:${percent}%; height:100%; background:${g.color}; transition: width 0.5s ease;"></div>
+                    </div>
+                    <div style="font-size:0.8rem; color:var(--text-muted); display:flex; justify-content:space-between;">
+                        <span>${Math.round(percent)}%</span>
+                        <span>${g.current}€</span>
+                    </div>
+                `;
+
+                // Click to Manage (Simple Prompt for MVP)
+                card.onclick = () => {
+                    const action = prompt(`Gerir Meta: ${g.name}\n1. Depositar\n2. Levantar\n3. Apagar\n\nEscolha (1-3):`);
+                    if (action === '1') {
+                        const val = prompt('Valor a depositar (€):');
+                        if (val) {
+                            if (auraState.updateGoalProgress(g.id, val)) this.renderGoals(container); // Re-render logic needed, or full updateUI
+                            // Ideally, we trigger a full UI update, but local re-render might duplicate.
+                            // Better: Trigger updateUI via custom event or direct call if available.
+                            // For now: Reload UI loop or hack refresh.
+                            // Let's use a Custom Event to trigger main update
+                            document.dispatchEvent(new Event('state-change'));
+                        }
+                    } else if (action === '2') {
+                        const val = prompt('Valor a levantar (€):');
+                        if (val) {
+                            auraState.updateGoalProgress(g.id, -Math.abs(val));
+                            document.dispatchEvent(new Event('state-change'));
+                        }
+                    } else if (action === '3') {
+                        if (confirm('Apagar esta meta?')) {
+                            auraState.deleteGoal(g.id);
+                            document.dispatchEvent(new Event('state-change'));
+                        }
+                    }
+                };
+
+                scrollDiv.appendChild(card);
+            });
+        }
+
+        // Add Logic
+        goalsDiv.querySelector('#btn-add-goal').onclick = () => {
+            const name = prompt('Nome da Meta (ex: Férias):');
+            if (!name) return;
+            const target = prompt('Valor Alvo (€):');
+            if (!target) return;
+            // Optional: Icon/Color picker prompts can be skipped for MVP defaults
+            auraState.addGoal(name, target);
+            document.dispatchEvent(new Event('state-change'));
+        };
     }
 };

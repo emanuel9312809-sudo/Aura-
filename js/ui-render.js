@@ -677,11 +677,18 @@ class UIRenderer {
         // --- Personal View Widgets ---
         // --- Personal View Widgets (Replaced by New UI Module v1.9.1) ---
         // --- Personal View Widgets ---
+        // --- Personal View Widgets ---
         // --- Personal View Widgets (Replaced by New UI Module v1.9.1) ---
         const pHeader = document.getElementById('personal-dynamic-header');
         if (pHeader) {
             pHeader.innerHTML = '';
             uiPersonal.renderPersonalHeader(pHeader);
+            // v2.14: Render Goals (Integrated into Header Container for now or create new container?)
+            // The header container in index.html might strictly be for header.
+            // Let's check where it renders. renderPersonalHeader adds Balance Card + Budget Card.
+            // We can append Goals directly to pHeader as well, or create a specific container.
+            // Since UI Personal renders modularly, we can just call it on pHeader which acts as a wrapper.
+            uiPersonal.renderGoals(pHeader);
         }
 
         // v1.9.8: Preview History
