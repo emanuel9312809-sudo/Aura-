@@ -35,9 +35,15 @@ class NavigationManager {
 
     // Call this if closed manually (X button) to keep history clean
     popModal() {
+        // Just go back; the popstate listener will handle the stack and closing.
+        // Check if we actually have history to go back to (internal check)
         if (this.historyStack.length > 0) {
-            this.historyStack.pop();
-            history.back(); // Remove the URL hash/state
+            history.back();
+        } else {
+            // Fallback: if stack is empty (e.g. reload), try to close known modals manually or just ignore.
+            // For robustness, let's just try to remove 'open' class from all modals.
+            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
+            document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); // For custom modals
         }
     }
 }
