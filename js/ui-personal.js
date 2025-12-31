@@ -27,7 +27,7 @@ export const uiPersonal = {
         budgetContainer.style.padding = '15px';
 
         const bHeader = document.createElement('h4');
-        bHeader.textContent = 'Orçamento Disponível';
+        bHeader.textContent = 'Distribuição Disponível'; // v2.14.3 Changed from Orçamento
         bHeader.style.marginBottom = '10px';
         bHeader.style.color = 'var(--text-muted)';
         budgetContainer.appendChild(bHeader);
@@ -36,7 +36,7 @@ export const uiPersonal = {
         const hasBudget = cats.some(c => c.allocation > 0);
 
         if (!hasBudget) {
-            budgetContainer.innerHTML += '<div style="opacity:0.6; font-size:0.9rem;">Configure a distribuição nas definições.</div>';
+            budgetContainer.innerHTML += '<div style="opacity:0.6; font-size:0.9rem;">Defina as % em Configurações > Distribuição.</div>';
         } else {
             // Container Flex: Chart | Legend
             const flexBox = document.createElement('div');
@@ -111,7 +111,10 @@ export const uiPersonal = {
                             <div style="width:8px; height:8px; border-radius:50%; background:${c.color};"></div>
                             <span style="color:#ddd;">${c.name}</span>
                         </div>
-                        <span style="font-weight:bold; color:white;">${amount.toFixed(0)}€</span>
+                        <div style="text-align:right;">
+                            <div style="font-weight:bold; color:white;">${amount.toFixed(0)}€</div>
+                            <div style="font-size:0.7rem; color:#666;">${c.allocation}%</div>
+                        </div>
                     `;
                     legend.appendChild(row);
 

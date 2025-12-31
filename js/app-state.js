@@ -50,9 +50,9 @@ class AuraState {
                 inventory: [],
                 // v1.9.1: Dynamic Personal Categories
                 personalCategories: [
-                    { id: 'cat_essential', name: 'Essencial', color: '#ff4444', allocation: 50 }, // Red
-                    { id: 'cat_leisure', name: 'Lazer', color: '#4444ff', allocation: 30 },     // Blue
-                    { id: 'cat_invest', name: 'Investimento', color: '#44ff44', allocation: 20 } // Green
+                    { id: 'cat_essential', name: 'Essencial', color: '#ff4444' }, // Red
+                    { id: 'cat_leisure', name: 'Lazer', color: '#4444ff' },     // Blue
+                    { id: 'cat_invest', name: 'Investimento', color: '#44ff44' } // Green
                 ],
                 templates: [],
                 // v2.14: Savings Goals
@@ -598,15 +598,6 @@ class AuraState {
             this.saveState();
         } else {
             console.error("Category not found for adding sub:", catInd);
-        }
-    }
-
-    // v2.15: Update Personal Category (e.g. Allocation)
-    updatePersonalCategory(id, updates) {
-        const cat = this.state.finance.personalCategories.find(c => c.id === id);
-        if (cat) {
-            Object.assign(cat, updates);
-            this.saveState();
         }
     }
 
