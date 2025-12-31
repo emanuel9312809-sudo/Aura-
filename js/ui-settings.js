@@ -439,28 +439,55 @@ export const uiSettings = {
             btnSave.textContent = 'Salvar Distribuição';
             btnSave.className = 'primary';
             btnSave.style.width = '100%';
-            btnSave.disabled = !isValid;
+            btnSave.id = 'btn-save-biz-dist';
             btnSave.onclick = () => {
                 if (isValid) {
                     auraState.saveBusinessBuckets(localBuckets);
-                    alert('Distribuição Salva!');
+                    alert('Distribuição de Negócio Salva!');
                 }
             };
             footer.appendChild(btnSave);
 
             container.appendChild(footer);
+
+            // v2.15: Personal Allocation Section (Appended)
+            const personalSection = document.createElement('div');
+            personalSection.id = 'personal-dist-section';
+            personalSection.style.marginTop = '40px';
+            personalSection.style.borderTop = '2px dashed rgba(255,255,255,0.1)';
+            personalSection.style.paddingTop = '20px';
+            container.appendChild(personalSection);
+
+            // Render Personal UI
+            this.renderPersonalAllocation(personalSection);
         };
 
         const updateTotal = () => {
             const total = localBuckets.reduce((sum, b) => sum + (parseFloat(b.percent) || 0), 0);
             const isValid = Math.abs(total - 100) < 0.1;
 
+            // Dynamic find
+            const tEl = container.querySelector('#btn-save-biz-dist').previousElementSibling; // Assumption: Total is before Save Button
+            // Actually, totalDisplay is appended before btnSave.
+            // But inside totalDisplay uses innerHTML with strong.
+            // Let's rely on finding 'strong' inside the footer we created?
+            // But footer is re-created on render.
+            // Better: Let's simpler logic. We have references if we are inside render, but we are outside.
+            // We can query selector by ID if we gave one to totalDisplay? No.
+            // Let's traverse: container -> footer -> strong?
+            // Or just re-render? No, input event calls updateTotal.
+
+            // Fix: Look for specific structure
+            // Assuming business section is the first part.
+            const divs = container.querySelectorAll('div');
+            // It's getting messy. Let's just find the first strong tag which corresponds to business total.
             const totalEl = container.querySelector('strong');
             if (totalEl) {
                 totalEl.innerHTML = `${total.toFixed(1)}%`;
                 totalEl.style.color = isValid ? '#00e676' : '#ff4444';
             }
-            const saveBtn = container.querySelector('div:last-child button.primary');
+
+            const saveBtn = document.getElementById('btn-save-biz-dist');
             if (saveBtn) saveBtn.disabled = !isValid;
         };
 
