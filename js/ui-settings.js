@@ -2,13 +2,13 @@ import { auraState } from './app-state.js';
 
 export const uiSettings = {
     renderCategoryManager(container) {
-        console.log('UI Settings: Render Category Manager', container);
+        console.log('UI Settings: Render Distribution Manager', container);
         if (!container) return;
         container.innerHTML = ''; // Fix Duplication v1.9.6
 
         // Header
         const header = document.createElement('h3');
-        header.textContent = 'Gerir Distribuições'; // v2.8 Renamed from Categorias Pessoais
+        header.textContent = 'Gerir Distribuições (Buckets)'; // v2.15 Clarified
         container.appendChild(header);
 
         // List Container
@@ -118,23 +118,23 @@ export const uiSettings = {
     renderSubcategoryManager(container) {
         if (!container) return;
         container.innerHTML = '';
-        container.id = 'subcat-manager-container'; // Ensure ID for refresh
+        container.id = 'subcat-manager-container';
 
         const header = document.createElement('h3');
-        header.textContent = 'Gerir Categorias'; // v2.8 Renamed from Subcategorias
+        header.textContent = 'Gerir Categorias (Detalhe)'; // v2.15 Renamed
         header.style.marginTop = '30px';
         container.appendChild(header);
 
         const cats = auraState.state.finance.personalCategories || [];
         if (cats.length === 0) {
-            container.innerHTML += '<div style="opacity:0.6;">Crie categorias primeiro.</div>';
+            container.innerHTML += '<div style="opacity:0.6;">Crie distribuições primeiro.</div>';
             return;
         }
 
         // 1. Category Selector
         const selContainer = document.createElement('div');
         selContainer.style.marginBottom = '15px';
-        selContainer.innerHTML = `<label style="display:block; color:#aaa; font-size:0.9rem; margin-bottom:5px;">Selecionar Distribuição Pai:</label>`; // v2.8
+        selContainer.innerHTML = `<label style="display:block; color:#aaa; font-size:0.9rem; margin-bottom:5px;">Selecionar Distribuição:</label>`;
 
         const select = document.createElement('select');
         select.style.width = '100%';
@@ -186,7 +186,7 @@ export const uiSettings = {
             formDiv.style.display = 'flex';
             formDiv.style.gap = '10px';
             formDiv.innerHTML = `
-                <input type="text" id="new-sub-name" placeholder="Adicionar subcategoria..." style="flex:1; min-width:0; padding:10px; border-radius:8px; border:1px solid #444; background:#222; color:white;">
+                <input type="text" id="new-sub-name" placeholder="Adicionar..." style="flex:1; min-width:0; padding:10px; border-radius:8px; border:1px solid #444; background:#222; color:white;">
                 <button class="primary" id="btn-add-sub-ded" style="width:auto !important; flex-shrink:0; padding:0 20px; font-size:1.2rem;">+</button>
             `;
             contentArea.appendChild(formDiv);
@@ -196,24 +196,23 @@ export const uiSettings = {
                 const val = formDiv.querySelector('#new-sub-name').value.trim();
                 if (val) {
                     auraState.addSubcategory(catId, val);
-                    this.renderSubcategoryManager(container); // Full Re-render to update select context if needed
+                    this.renderSubcategoryManager(container);
                 }
             };
 
             listDiv.querySelectorAll('.btn-del-sub-ded').forEach(btn => {
                 btn.onclick = () => {
-                    if (confirm('Remover categoria?')) { // v2.8
+                    if (confirm('Remover subcategoria?')) {
                         auraState.removeSubcategory(btn.dataset.cat, btn.dataset.sub);
                         this.renderSubcategoryManager(container);
                     }
                 };
             });
 
-            // v2.5: Edit Sub
             listDiv.querySelectorAll('.btn-edit-sub-ded').forEach(btn => {
                 btn.onclick = () => {
                     const oldName = btn.dataset.sub;
-                    const newName = prompt('Editar categoria:', oldName); // v2.8
+                    const newName = prompt('Editar subcategoria:', oldName);
                     if (newName && newName !== oldName) {
                         auraState.updateSubcategory(btn.dataset.cat, oldName, newName);
                         this.renderSubcategoryManager(container);
@@ -229,6 +228,76 @@ export const uiSettings = {
         select.addEventListener('change', (e) => {
             renderSubs(e.target.value);
         });
+    },
+
+    // v2.15: Expense Category (Energy Map) Manager
+    renderExpenseCategoryManager(container) {
+        console.log('UI Settings: Render Expense Cat Manager', container);
+        if (!container) return;
+        container.innerHTML = '';
+
+        const header = document.createElement('h3');
+        header.textContent = 'Gerir Categorias (Mapa de Energia)';
+        container.appendChild(header);
+
+        const listContainer = document.createElement('div');
+        listContainer.style.display = 'flex';
+        listContainer.style.flexDirection = 'column';
+        listContainer.style.gap = '10px';
+        container.appendChild(listContainer);
+
+        const renderList = () => {
+            listContainer.innerHTML = '';
+            const cats = auraState.state.finance.expenseCategories || [];
+
+            if (cats.length === 0) {
+                listContainer.innerHTML = '<div style="opacity:0.6; font-style:italic;">Nenhuma categoria de energia.</div>';
+            } else {
+                cats.forEach(cat => {
+                    const row = document.createElement('div');
+                    row.className = 'account-item';
+                    row.style.display = 'flex';
+                    row.style.justifyContent = 'space-between';
+                    row.style.alignItems = 'center';
+                    row.style.padding = '10px 0';
+                    row.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+
+                    row.innerHTML = `
+                         <span style="font-size:1rem;">${cat.name}</span>
+                         <button class="btn-del-exp-cat" data-id="${cat.id}" style="background:none; border:none; color:#ff4444; cursor:pointer; font-size:1.2rem;">×</button>
+                     `;
+
+                    row.querySelector('.btn-del-exp-cat').onclick = () => {
+                        if (confirm(`Apagar "${cat.name}"?`)) {
+                            auraState.removeExpenseCategory(cat.id);
+                            renderList();
+                        }
+                    };
+                    listContainer.appendChild(row);
+                });
+            }
+        };
+
+        renderList();
+
+        const footer = document.createElement('div');
+        footer.style.marginTop = '15px';
+        footer.style.display = 'flex';
+        footer.style.gap = '10px';
+        footer.innerHTML = `
+            <input type="text" id="new-exp-cat-name" placeholder="Nova Categoria..." style="flex:1; padding:10px; border-radius:5px; border:1px solid #444; background:#222; color:white;">
+            <button class="primary" id="btn-add-exp-cat" style="width:auto; padding:0 20px;">+</button>
+        `;
+        container.appendChild(footer);
+
+        footer.querySelector('#btn-add-exp-cat').onclick = () => {
+            const name = footer.querySelector('#new-exp-cat-name').value.trim();
+            if (name) {
+                auraState.addExpenseCategory(name);
+                footer.querySelector('#new-exp-cat-name').value = '';
+                renderList();
+            }
+        };
     },
 
     // v2.7: Personal Budget Allocation UI

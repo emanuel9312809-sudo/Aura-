@@ -212,13 +212,19 @@ class UIRenderer {
                         <input type="number" id="p-trans-amount" placeholder="Valor (€)" step="0.01" style="width:100%; padding:10px; margin-bottom:15px; border-radius:8px; border:1px solid #333; background:#222; color:white;">
                         
                         <div id="p-trans-cat-container" style="margin-bottom:15px;">
-                             <label style="color:#aaa; font-size:0.8rem;">Distribuição</label>
+                             <label style="color:#aaa; font-size:0.8rem;">Distribuição (Donut)</label>
                              <select id="p-trans-category" style="width:100%; padding:10px; border-radius:8px; border:1px solid #333; background:#222; color:white; margin-bottom:10px;">
                                 <option value="Essencial">Essencial</option>
                              </select>
-                             <label style="color:#aaa; font-size:0.8rem;">Categoria</label>
-                             <select id="p-trans-subcategory" style="width:100%; padding:10px; border-radius:8px; border:1px solid #333; background:#222; color:white;">
+                             
+                             <label style="color:#aaa; font-size:0.8rem;">Categoria (Mapa de Energia)</label> 
+                             <select id="p-trans-expense-cat" style="width:100%; padding:10px; border-radius:8px; border:1px solid #333; background:#222; color:white; margin-bottom:10px;">
                                 <option value="">Sem Categoria</option>
+                             </select>
+
+                             <label style="color:#aaa; font-size:0.8rem;">Subcategoria (Detalhe)</label>
+                             <select id="p-trans-subcategory" style="width:100%; padding:10px; border-radius:8px; border:1px solid #333; background:#222; color:white;">
+                                <option value="">Sem Subcategorias</option>
                              </select>
                         </div>
 
@@ -253,7 +259,9 @@ class UIRenderer {
                     <!-- TAB DISTRIBUIÇÃO v1.9.5 Refactor -->
                     <div id="tab-dist" class="modal-tab-content">
                          <div class="glass-card">
-                            <div id="settings-distribution-container"></div>
+                            <div id="settings-buckets-container"></div>
+                            <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin:20px 0;">
+                            <div id="settings-alloc-container"></div>
                         </div>
                     </div>
 
@@ -494,8 +502,12 @@ class UIRenderer {
             modal.classList.add('open');
             navManager.pushModal('settings', () => modal.classList.remove('open')); // v2.12 Nav
             if (uiSettings) {
-                uiSettings.renderCategoryManager(document.getElementById('settings-cats-container'));
-                uiSettings.renderDistributionSettings(document.getElementById('settings-distribution-container'));
+                // Tab Distribuição: Buckets + Allocations
+                uiSettings.renderCategoryManager(document.getElementById('settings-buckets-container'));
+                uiSettings.renderPersonalAllocation(document.getElementById('settings-alloc-container'));
+
+                // Tab Categorias: Energy Map
+                uiSettings.renderExpenseCategoryManager(document.getElementById('settings-cats-container'));
             }
         });
         document.getElementById('btn-close-modal').addEventListener('click', () => {
@@ -636,6 +648,7 @@ class UIRenderer {
         const pTransAmount = document.getElementById('p-trans-amount');
         const pTransTitle = document.getElementById('p-trans-title'); // v2.4
         const pTransCat = document.getElementById('p-trans-category');
+        const pTransExpCat = document.getElementById('p-trans-expense-cat'); // v2.15
         const pTransSub = document.getElementById('p-trans-subcategory'); // v2.4
         const pTransAcc = document.getElementById('p-trans-account');
         const pTransCatContainer = document.getElementById('p-trans-cat-container');
@@ -654,6 +667,7 @@ class UIRenderer {
             pTransAcc.innerHTML = accounts.map(a => `<option value="${a.id}">${a.name} (${parseFloat(a.balance || 0).toFixed(2)}€)</option>`).join('');
 
             // Populate Categories v1.9.1
+            // Populate Categories v1.9.1 (Distribution)
             const cats = auraState.state.finance.personalCategories || [];
             if (cats.length > 0) {
                 pTransCat.innerHTML = cats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
@@ -662,6 +676,14 @@ class UIRenderer {
             } else {
                 pTransCat.innerHTML = '<option value="Outros">Outros</option>';
                 pTransSub.innerHTML = '<option value="">Sem Subcategorias</option>';
+            }
+
+            // Populate Expense Categories v2.15 (Energy Map)
+            const expCats = auraState.state.finance.expenseCategories || [];
+            if (expCats.length > 0) {
+                pTransExpCat.innerHTML = expCats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+            } else {
+                pTransExpCat.innerHTML = '<option value="">Outros</option>';
             }
 
             if (type === 'expense') {
@@ -721,16 +743,17 @@ class UIRenderer {
             let title = pTransTitle.value.trim(); // v2.4
             const accId = pTransAcc.value;
             const cat = currentPTransType === 'expense' ? pTransCat.value : null;
+            const expCat = currentPTransType === 'expense' ? pTransExpCat.value : null; // v2.15
             const sub = currentPTransType === 'expense' ? pTransSub.value : null; // v2.4
 
             // v2.8: Title is now optional (Detail)
             if (!title) {
-                if (currentPTransType === 'expense') title = sub || cat || 'Despesa';
+                if (currentPTransType === 'expense') title = sub || expCat || cat || 'Despesa';
                 else title = 'Rendimento';
             }
 
             if (amt && accId) {
-                auraState.addPersonalTransaction(currentPTransType, amt, cat, accId, title, sub);
+                auraState.addPersonalTransaction(currentPTransType, amt, cat, accId, title, sub, expCat);
                 navManager.popModal(); // v2.12: Close & Sync History
             } else {
                 alert('Preencha o valor e selecione uma conta.');

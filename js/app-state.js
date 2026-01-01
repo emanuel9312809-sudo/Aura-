@@ -54,6 +54,14 @@ class AuraState {
                     { id: 'cat_leisure', name: 'Lazer', color: '#4444ff' },     // Blue
                     { id: 'cat_invest', name: 'Investimento', color: '#44ff44' } // Green
                 ],
+                // v2.15: Energy Map Categories (Orthogonal to Distribution)
+                expenseCategories: [
+                    { id: 'exp_home', name: 'Casa' },
+                    { id: 'exp_food', name: 'Alimentação' },
+                    { id: 'exp_trans', name: 'Transporte' },
+                    { id: 'exp_health', name: 'Saúde' },
+                    { id: 'exp_shop', name: 'Compras' }
+                ],
                 templates: [],
                 // v2.14: Savings Goals
                 goals: []
@@ -498,7 +506,9 @@ class AuraState {
     }
     // --- Personal Finance v1.8.0 ---
     // v2.4: Added title and subcategory
-    addPersonalTransaction(type, amount, category, accountId, title, subcategory) {
+    // v2.4: Added title and subcategory
+    // v2.15: Added expenseCategory (for Energy Map)
+    addPersonalTransaction(type, amount, bucketId, accountId, title, subcategory, expenseCategory) {
         amount = parseFloat(amount);
         if (isNaN(amount) || amount <= 0) return;
 
@@ -522,32 +532,33 @@ class AuraState {
             id: Date.now(),
             date: new Date().toISOString(),
             type: type, // 'expense' or 'income'
-            category: category, // 'Essencial', 'Lazer', 'Investimento' (or null for income)
+            category: bucketId, // distribution bucket (Needs, Wants...)
+            expenseCategory: expenseCategory || null, // v2.15 (Food, Home...)
             subcategory: subcategory || null, // v2.4
-            summary: category || 'Rendimento Pessoal',
-            title: title || (category ? `${category}` : 'Despesa'), // v2.4
+            summary: bucketId || 'Rendimento Pessoal',
+            title: title || (bucketId ? `${bucketId}` : 'Despesa'),
             amount: amount,
             accountId: accountId,
-            split: null, // No business split
+            split: null,
             description: title || 'Movimento Pessoal'
         });
 
         if (this.state.finance.transactions.length > 50) this.state.finance.transactions.pop();
-        // v1.9.1: Add XP for logging
         this.addXP(5);
         this.saveState();
-        console.log(`Personal Transaction: ${type} ${amount}€ (${category}) -> ${acc.name}`);
+        console.log(`Personal Transaction: ${type} ${amount}€ (${bucketId}/${expenseCategory}) -> ${acc.name}`);
     }
 
     // v1.9.0: Radar Chart Data (Updated v1.9.1 for Dynamic Categories)
+    // v2.15: Radar Chart Data (Now Aggregates by Expense Category)
     getMonthlyPersonalExpenses() {
         const now = new Date();
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
 
-        // v1.9.1: Initialize totals based on current categories
         const totals = {};
-        const categories = this.state.finance.personalCategories || [];
+        // Use expenseCategories instead of personalCategories (Buckets)
+        const categories = this.state.finance.expenseCategories || [];
 
         categories.forEach(cat => {
             totals[cat.name] = 0;
@@ -556,19 +567,36 @@ class AuraState {
         if (this.state.finance.transactions) {
             this.state.finance.transactions.forEach(t => {
                 const tDate = new Date(t.date);
-                if (t.type === 'expense' && t.category && tDate.getMonth() === currentMonth && tDate.getFullYear() === currentYear) {
-                    // Normalize check due to legacy data
-                    if (totals.hasOwnProperty(t.category)) {
-                        totals[t.category] += t.amount;
-                    } else {
-                        // Fallback logic could go here, or just ignore outdated categories
-                        // or add to an 'Outros' bucket if we wanted.
+                if (t.type === 'expense' && tDate.getMonth() === currentMonth && tDate.getFullYear() === currentYear) {
+                    // Try to match expenseCategory name
+                    // t.expenseCategory might be ID or Name depending on UI implementation.
+                    // Assuming Name for simplicity or mapping ID.
+                    if (t.expenseCategory && totals.hasOwnProperty(t.expenseCategory)) {
+                        totals[t.expenseCategory] += t.amount;
                     }
+                    // Backward compatibility: If no expenseCategory, we ignore or map legacy?
+                    // User requested specific separation, so ignoring legacy logic for Radar is acceptable for "new view".
                 }
             });
         }
 
         return totals;
+    }
+
+    // v2.15: Config Expense Categories
+    addExpenseCategory(name) {
+        if (!name) return;
+        if (!this.state.finance.expenseCategories) this.state.finance.expenseCategories = [];
+        this.state.finance.expenseCategories.push({
+            id: 'exp_' + Date.now(),
+            name: name
+        });
+        this.saveState();
+    }
+
+    removeExpenseCategory(id) {
+        this.state.finance.expenseCategories = this.state.finance.expenseCategories.filter(c => c.id !== id);
+        this.saveState();
     }
 
     // v1.9.1: Category Management
