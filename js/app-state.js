@@ -57,11 +57,12 @@ class AuraState {
                 // v2.15: Energy Map Categories (Orthogonal to Distribution)
                 expenseCategories: [
                     { id: 'exp_home', name: 'Casa' },
-                    { id: 'exp_food', name: 'Alimentação' },
                     { id: 'exp_trans', name: 'Transporte' },
                     { id: 'exp_health', name: 'Saúde' },
                     { id: 'exp_shop', name: 'Compras' }
                 ],
+                // v2.16: Independent Subcategories (Detail Tags)
+                subcategories: [],
                 templates: [],
                 // v2.14: Savings Goals
                 goals: []
@@ -617,17 +618,33 @@ class AuraState {
     }
 
     // v2.4: Manage Subcategories
-    addSubcategory(catInd, subName) {
-        // catInd might be string ID.
-        const cat = this.state.finance.personalCategories.find(c => c.id === catInd);
-        if (cat) {
-            if (!cat.subcategories) cat.subcategories = [];
-            cat.subcategories.push(subName);
+    // v2.16: Manage Independent Subcategories
+    addSubcategory(name) {
+        if (!name) return;
+        if (!this.state.finance.subcategories) this.state.finance.subcategories = [];
+
+        // Prevent duplicates
+        if (this.state.finance.subcategories.includes(name)) return;
+
+        this.state.finance.subcategories.push(name);
+        this.saveState();
+    }
+
+    removeSubcategory(name) { // v2.16 change signature to just name
+        if (!this.state.finance.subcategories) return;
+        this.state.finance.subcategories = this.state.finance.subcategories.filter(s => s !== name);
+        this.saveState();
+    }
+
+    updateSubcategory(oldName, newName) { // v2.16
+        if (!this.state.finance.subcategories) return;
+        const index = this.state.finance.subcategories.indexOf(oldName);
+        if (index !== -1) {
+            this.state.finance.subcategories[index] = newName;
             this.saveState();
-        } else {
-            console.error("Category not found for adding sub:", catInd);
         }
     }
+
 
     // v2.14: Savings Goals Management
     addGoal(name, target, icon, color) {
@@ -664,29 +681,8 @@ class AuraState {
         return false;
     }
 
-    // v2.5: Update Subcategory
-    updateSubcategory(catInd, oldName, newName) {
-        const cat = this.state.finance.personalCategories.find(c => c.id === catInd);
-        if (cat && cat.subcategories) {
-            const index = cat.subcategories.indexOf(oldName);
-            if (index !== -1) {
-                cat.subcategories[index] = newName;
-                this.saveState();
-            }
-        }
-    }
-
-    removeSubcategory(catInd, subName) {
-        const cat = this.state.finance.personalCategories.find(c => c.id === catInd);
-        if (cat && cat.subcategories) {
-            cat.subcategories = cat.subcategories.filter(s => s !== subName);
-            this.saveState();
-        }
-    }
-
     removePersonalCategory(id) {
         if (!this.state.finance.personalCategories) return;
-        this.state.finance.personalCategories = this.state.finance.personalCategories.filter(c => c.id !== id);
         this.state.finance.personalCategories = this.state.finance.personalCategories.filter(c => c.id !== id);
         this.saveState();
         console.log(`Category Removed: ${id}`);

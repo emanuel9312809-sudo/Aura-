@@ -212,12 +212,12 @@ class UIRenderer {
                         <input type="number" id="p-trans-amount" placeholder="Valor (€)" step="0.01" style="width:100%; padding:10px; margin-bottom:15px; border-radius:8px; border:1px solid #333; background:#222; color:white;">
                         
                         <div id="p-trans-cat-container" style="margin-bottom:15px;">
-                             <label style="color:#aaa; font-size:0.8rem;">Distribuição (Donut)</label>
+                             <label style="color:#aaa; font-size:0.8rem;">Baldes de Gastos (Distribuição)</label>
                              <select id="p-trans-category" style="width:100%; padding:10px; border-radius:8px; border:1px solid #333; background:#222; color:white; margin-bottom:10px;">
                                 <option value="Essencial">Essencial</option>
                              </select>
                              
-                             <label style="color:#aaa; font-size:0.8rem;">Categoria (Mapa de Energia)</label> 
+                             <label style="color:#aaa; font-size:0.8rem;">Mapa de Energia (Categoria)</label> 
                              <select id="p-trans-expense-cat" style="width:100%; padding:10px; border-radius:8px; border:1px solid #333; background:#222; color:white; margin-bottom:10px;">
                                 <option value="">Sem Categoria</option>
                              </select>
@@ -671,10 +671,15 @@ class UIRenderer {
             const cats = auraState.state.finance.personalCategories || [];
             if (cats.length > 0) {
                 pTransCat.innerHTML = cats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-                // Trigger Subcategory update for first item
-                updateSubcategories(cats[0].name);
             } else {
                 pTransCat.innerHTML = '<option value="Outros">Outros</option>';
+            }
+
+            // Populate Subcategories v2.16 (Global)
+            const subs = auraState.state.finance.subcategories || [];
+            if (subs.length > 0) {
+                pTransSub.innerHTML = subs.map(s => `<option value="${s}">${s}</option>`).join('');
+            } else {
                 pTransSub.innerHTML = '<option value="">Sem Subcategorias</option>';
             }
 
@@ -699,22 +704,7 @@ class UIRenderer {
             }
         };
 
-        // v2.4: Helper to update Subcategories
-        const updateSubcategories = (catName) => {
-            const cat = (auraState.state.finance.personalCategories || []).find(c => c.name === catName);
-            pTransSub.innerHTML = '<option value="">Sem Subcategoria</option>';
 
-            if (cat && cat.subcategories && cat.subcategories.length > 0) {
-                pTransSub.innerHTML = cat.subcategories.map(s => `<option value="${s}">${s}</option>`).join('');
-            }
-        };
-
-        // v2.4: Listen for Category Change
-        if (pTransCat) {
-            pTransCat.addEventListener('change', (e) => {
-                updateSubcategories(e.target.value);
-            });
-        }
 
         // v2.9: FAB Logic
         const fabContainer = document.getElementById('fab-personal-container');

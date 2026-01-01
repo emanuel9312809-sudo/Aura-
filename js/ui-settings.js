@@ -8,7 +8,7 @@ export const uiSettings = {
 
         // Header
         const header = document.createElement('h3');
-        header.textContent = 'Gerir Distribuições (Buckets)'; // v2.15 Clarified
+        header.textContent = 'Baldes de Gastos'; // v2.16 Renamed from Gerir Distribuições
         container.appendChild(header);
 
         // List Container
@@ -121,58 +121,33 @@ export const uiSettings = {
         container.id = 'subcat-manager-container';
 
         const header = document.createElement('h3');
-        header.textContent = 'Gerir Categorias (Detalhe)'; // v2.15 Renamed
+        header.textContent = 'Subcategorias (Detalhes)'; // v2.16 Renamed
         header.style.marginTop = '30px';
         container.appendChild(header);
 
-        const cats = auraState.state.finance.personalCategories || [];
-        if (cats.length === 0) {
-            container.innerHTML += '<div style="opacity:0.6;">Crie distribuições primeiro.</div>';
-            return;
-        }
+        // v2.16: Independent List (Global)
+        const subs = auraState.state.finance.subcategories || [];
 
-        // 1. Category Selector
-        const selContainer = document.createElement('div');
-        selContainer.style.marginBottom = '15px';
-        selContainer.innerHTML = `<label style="display:block; color:#aaa; font-size:0.9rem; margin-bottom:5px;">Selecionar Distribuição:</label>`;
-
-        const select = document.createElement('select');
-        select.style.width = '100%';
-        select.style.padding = '10px';
-        select.style.borderRadius = '8px';
-        select.style.border = '1px solid #444';
-        select.style.background = '#222';
-        select.style.color = 'white';
-
-        cats.forEach(c => {
-            const opt = document.createElement('option');
-            opt.value = c.id;
-            opt.textContent = c.name;
-            select.appendChild(opt);
-        });
-        selContainer.appendChild(select);
-        container.appendChild(selContainer);
-
-        // 2. List & Add Container
+        // List & Add Container
         const contentArea = document.createElement('div');
         container.appendChild(contentArea);
 
-        const renderSubs = (catId) => {
+        const renderSubs = () => { // v2.16 No catId arg
             contentArea.innerHTML = '';
-            const cat = cats.find(c => c.id === catId);
-            if (!cat) return;
 
             // List
             const listDiv = document.createElement('div');
             listDiv.style.marginBottom = '15px';
+            listDiv.style.maxHeight = '200px';
+            listDiv.style.overflowY = 'auto';
 
-            if (cat.subcategories && cat.subcategories.length > 0) {
-                listDiv.innerHTML = cat.subcategories.map(s => `
+            if (subs.length > 0) {
+                listDiv.innerHTML = subs.map(s => `
                     <div class="account-item" style="padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center;">
                         <span>${s}</span>
                         <div style="display:flex; gap:10px;">
-                            <button class="btn-edit-sub-ded" data-cat="${catId}" data-sub="${s}" style="color:#aaa; background:none; border:none; cursor:pointer;">✏️</button>
-                            <button class="btn-del-sub-ded" data-cat="${catId}" data-sub="${s}" style="color:#ff4444; background:none; border:none; cursor:pointer;">🗑️</button>
+                            <button class="btn-edit-sub-ded" data-sub="${s}" style="color:#aaa; background:none; border:none; cursor:pointer;">✏️</button>
+                            <button class="btn-del-sub-ded" data-sub="${s}" style="color:#ff4444; background:none; border:none; cursor:pointer;">🗑️</button>
                         </div>
                     </div>
                 `).join('');
@@ -186,7 +161,7 @@ export const uiSettings = {
             formDiv.style.display = 'flex';
             formDiv.style.gap = '10px';
             formDiv.innerHTML = `
-                <input type="text" id="new-sub-name" placeholder="Adicionar..." style="flex:1; min-width:0; padding:10px; border-radius:8px; border:1px solid #444; background:#222; color:white;">
+                <input type="text" id="new-sub-name" placeholder="Adicionar subcategoria..." style="flex:1; min-width:0; padding:10px; border-radius:8px; border:1px solid #444; background:#222; color:white;">
                 <button class="primary" id="btn-add-sub-ded" style="width:auto !important; flex-shrink:0; padding:0 20px; font-size:1.2rem;">+</button>
             `;
             contentArea.appendChild(formDiv);
@@ -195,7 +170,7 @@ export const uiSettings = {
             formDiv.querySelector('#btn-add-sub-ded').onclick = () => {
                 const val = formDiv.querySelector('#new-sub-name').value.trim();
                 if (val) {
-                    auraState.addSubcategory(catId, val);
+                    auraState.addSubcategory(val);
                     this.renderSubcategoryManager(container);
                 }
             };
@@ -203,7 +178,7 @@ export const uiSettings = {
             listDiv.querySelectorAll('.btn-del-sub-ded').forEach(btn => {
                 btn.onclick = () => {
                     if (confirm('Remover subcategoria?')) {
-                        auraState.removeSubcategory(btn.dataset.cat, btn.dataset.sub);
+                        auraState.removeSubcategory(btn.dataset.sub);
                         this.renderSubcategoryManager(container);
                     }
                 };
@@ -214,7 +189,7 @@ export const uiSettings = {
                     const oldName = btn.dataset.sub;
                     const newName = prompt('Editar subcategoria:', oldName);
                     if (newName && newName !== oldName) {
-                        auraState.updateSubcategory(btn.dataset.cat, oldName, newName);
+                        auraState.updateSubcategory(oldName, newName);
                         this.renderSubcategoryManager(container);
                     }
                 };
@@ -222,12 +197,7 @@ export const uiSettings = {
         };
 
         // Init
-        renderSubs(select.value);
-
-        // Change Event
-        select.addEventListener('change', (e) => {
-            renderSubs(e.target.value);
-        });
+        renderSubs();
     },
 
     // v2.15: Expense Category (Energy Map) Manager
@@ -237,7 +207,7 @@ export const uiSettings = {
         container.innerHTML = '';
 
         const header = document.createElement('h3');
-        header.textContent = 'Gerir Categorias (Mapa de Energia)';
+        header.textContent = 'Mapa de Energia'; // v2.16 Renamed
         container.appendChild(header);
 
         const listContainer = document.createElement('div');
