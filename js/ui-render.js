@@ -211,11 +211,7 @@ class UIRenderer {
                     <div style="margin-top:20px;">
                         <input type="number" id="p-trans-amount" placeholder="Valor (€)" step="0.01" style="width:100%; padding:10px; margin-bottom:15px; border-radius:8px; border:1px solid #333; background:#222; color:white;">
                         
-                        <div id="p-trans-cat-container" style="margin-bottom:15px;">
-                             <label style="color:#aaa; font-size:0.8rem;">Baldes de Gastos (Distribuição)</label>
-                             <select id="p-trans-category" style="width:100%; padding:10px; border-radius:8px; border:1px solid #333; background:#222; color:white; margin-bottom:10px;">
-                                <option value="Essencial">Essencial</option>
-                             </select>
+
                              
                              <label style="color:#aaa; font-size:0.8rem;">Mapa de Energia (Categoria)</label> 
                              <select id="p-trans-expense-cat" style="width:100%; padding:10px; border-radius:8px; border:1px solid #333; background:#222; color:white; margin-bottom:10px;">
@@ -647,7 +643,7 @@ class UIRenderer {
         const transModal = document.getElementById('transaction-modal');
         const pTransAmount = document.getElementById('p-trans-amount');
         const pTransTitle = document.getElementById('p-trans-title'); // v2.4
-        const pTransCat = document.getElementById('p-trans-category');
+        // const pTransCat = document.getElementById('p-trans-category'); Removed v2.17
         const pTransExpCat = document.getElementById('p-trans-expense-cat'); // v2.15
         const pTransSub = document.getElementById('p-trans-subcategory'); // v2.4
         const pTransAcc = document.getElementById('p-trans-account');
@@ -667,13 +663,13 @@ class UIRenderer {
             pTransAcc.innerHTML = accounts.map(a => `<option value="${a.id}">${a.name} (${parseFloat(a.balance || 0).toFixed(2)}€)</option>`).join('');
 
             // Populate Categories v1.9.1
-            // Populate Categories v1.9.1 (Distribution)
-            const cats = auraState.state.finance.personalCategories || [];
-            if (cats.length > 0) {
-                pTransCat.innerHTML = cats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-            } else {
-                pTransCat.innerHTML = '<option value="Outros">Outros</option>';
-            }
+            // Populate Categories v1.9.1 (Distribution) - Removed UI v2.17
+            // const cats = auraState.state.finance.personalCategories || [];
+            // if (cats.length > 0) {
+            //     pTransCat.innerHTML = cats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+            // } else {
+            //     pTransCat.innerHTML = '<option value="Outros">Outros</option>';
+            // }
 
             // Populate Subcategories v2.16 (Global)
             const subs = auraState.state.finance.subcategories || [];
@@ -732,7 +728,8 @@ class UIRenderer {
             const amt = pTransAmount.value;
             let title = pTransTitle.value.trim(); // v2.4
             const accId = pTransAcc.value;
-            const cat = currentPTransType === 'expense' ? pTransCat.value : null;
+            // v2.17: Bucket Removed from UI, default to Essencial or derive later. Preserving "sem alterar mais nada" logic means simple default.
+            const cat = currentPTransType === 'expense' ? 'Essencial' : null;
             const expCat = currentPTransType === 'expense' ? pTransExpCat.value : null; // v2.15
             const sub = currentPTransType === 'expense' ? pTransSub.value : null; // v2.4
 
