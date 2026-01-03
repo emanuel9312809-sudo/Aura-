@@ -138,6 +138,35 @@ export const uiPersonal = {
 
             flexBox.appendChild(legend);
             budgetContainer.appendChild(flexBox);
+
+            // v2.18: Explicit "Spendable" List
+            const spendableList = document.createElement('div');
+            spendableList.style.marginTop = '20px';
+            spendableList.style.paddingTop = '15px';
+            spendableList.style.borderTop = '1px solid rgba(255,255,255,0.1)';
+            
+            const slHeader = document.createElement('h5');
+            slHeader.textContent = 'Podes Gastar (Baseado no Saldo Atual)';
+            slHeader.style.marginBottom = '10px';
+            slHeader.style.color = '#aaa';
+            slHeader.style.fontSize = '0.9rem';
+            spendableList.appendChild(slHeader);
+
+            cats.forEach(c => {
+                if (c.allocation > 0) {
+                    const amt = totalBalance * (c.allocation / 100);
+                    const item = document.createElement('div');
+                    item.style.display = 'flex';
+                    item.style.justifyContent = 'space-between';
+                    item.style.marginBottom = '8px';
+                    item.innerHTML = `
+                        <span style="color:${c.color}">${c.name}</span>
+                        <span style="font-weight:bold;">${amt.toFixed(2)} €</span>
+                    `;
+                    spendableList.appendChild(item);
+                }
+            });
+            budgetContainer.appendChild(spendableList);
         }
         container.appendChild(budgetContainer);
 
